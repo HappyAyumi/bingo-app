@@ -4,12 +4,13 @@
     android:gravity="center"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="8dp">
+    android:padding="6dp">
 
     <ImageView
         android:id="@+id/bingoImage"
         android:layout_width="80dp"
         android:layout_height="80dp"
+        android:background="@drawable/bingo_cell_bg"
         android:scaleType="centerCrop"
         android:src="@android:drawable/ic_menu_camera" />
 
@@ -18,5 +19,5 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="マス"
-        android:textSize="12sp" />
+        android:textSize="12sp"/>
 </LinearLayout>
