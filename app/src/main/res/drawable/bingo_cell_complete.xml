@@ -1,0 +1,11 @@
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <solid android:color="#FFF0F5" /> <!-- ラベンダーピンク背景 -->
+
+    <stroke
+        android:width="2dp"
+        android:color="#FFB6C1" /> <!-- 濃いめピンク枠 -->
+
+    <corners android:radius="12dp" />
+</shape>
