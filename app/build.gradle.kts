@@ -54,7 +54,7 @@ dependencies {
     // --- Compose 依存関係 ---
     val composeBom = platform("androidx.compose:compose-bom:2023.08.00")
     implementation(composeBom)
-
+    implementation("androidx.cardview:cardview:1.0.0")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics") // Color クラス用
     implementation("androidx.compose.ui:ui-tooling-preview")
