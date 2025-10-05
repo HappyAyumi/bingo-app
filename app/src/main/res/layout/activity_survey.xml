@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="今週頑張りたいことを選んでください"
+        android:textSize="18sp"
+        android:layout_marginBottom="16dp"/>
+
+    <CheckBox
+        android:id="@+id/checkExercise"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="運動" />
+
+    <CheckBox
+        android:id="@+id/checkStudy"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="勉強" />
+
+    <CheckBox
+        android:id="@+id/checkLife"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="生活習慣" />
+
+    <Button
+        android:id="@+id/btnSubmit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="決定"
+        android:layout_marginTop="24dp"/>
+</LinearLayout>

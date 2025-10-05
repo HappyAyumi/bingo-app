@@ -10,20 +10,14 @@ import androidx.recyclerview.widget.RecyclerView
 
 class BingoAdapter(
     private val missions: List<String>,
-    private val onCellClick: (Int) -> Unit
+    private val onItemClick: (Int) -> Unit
 ) : RecyclerView.Adapter<BingoAdapter.BingoViewHolder>() {
 
-    private val images = mutableMapOf<Int, Uri?>() // マスごとの写真URIを保存
+    private val imageUris = MutableList<Uri?>(missions.size) { null }
 
-    inner class BingoViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val textMission: TextView = view.findViewById(R.id.textMission)
-        val imageMission: ImageView = view.findViewById(R.id.imageMission)
-
-        init {
-            view.setOnClickListener {
-                onCellClick(adapterPosition) // マスがタップされたら通知
-            }
-        }
+    class BingoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val imageMission: ImageView = itemView.findViewById(R.id.imageMission)
+        val textMission: TextView = itemView.findViewById(R.id.textMission)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BingoViewHolder {
@@ -35,25 +29,32 @@ class BingoAdapter(
     override fun onBindViewHolder(holder: BingoViewHolder, position: Int) {
         holder.textMission.text = missions[position]
 
-        // 正方形にする処理
-        holder.itemView.post {
-            val width = holder.itemView.width
-            holder.itemView.layoutParams.height = width
-        }
-
-        val uri = images[position]
+        val uri = imageUris[position]
         if (uri != null) {
-            holder.imageMission.visibility = View.VISIBLE
             holder.imageMission.setImageURI(uri)
+            holder.imageMission.visibility = View.VISIBLE
         } else {
+            // 画像がない場合は非表示
             holder.imageMission.visibility = View.GONE
         }
+
+        holder.itemView.setOnClickListener {
+            onItemClick(position)
+        }
     }
 
-    override fun getItemCount() = missions.size
+    override fun getItemCount(): Int = missions.size
+
+    fun hasImage(position: Int): Boolean {
+        return imageUris[position] != null
+    }
 
     fun setImage(position: Int, uri: Uri) {
-        images[position] = uri
+        imageUris[position] = uri
         notifyItemChanged(position)
     }
+
+    fun getImageUris(): List<Uri?> = imageUris
+
+    fun getMissions(): List<String> = missions
 }
