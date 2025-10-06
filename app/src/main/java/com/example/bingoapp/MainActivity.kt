@@ -1,41 +1,59 @@
 package com.example.bingoapp
 
 import android.Manifest
-import android.app.Activity
+import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
-import android.os.Environment
 import android.provider.MediaStore
-import android.widget.Toast
+import android.util.Log
+import android.view.View
+import android.widget.Button
+import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
+import androidx.camera.core.*
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import java.io.File
+import java.io.OutputStream
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
+    private lateinit var previewView: PreviewView
+    private lateinit var btnCapture: Button
     private lateinit var adapter: BingoAdapter
-    private lateinit var missions: List<String>
-    private var currentPhotoUri: Uri? = null
+    private var imageCapture: ImageCapture? = null
     private var currentPosition: Int = -1
+    private var tempPhotoFile: File? = null
 
-    private val takePictureLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == Activity.RESULT_OK && currentPhotoUri != null) {
-                adapter.setImage(currentPosition, currentPhotoUri!!)
-                Toast.makeText(this, "写真を追加しました！", Toast.LENGTH_SHORT).show()
-                checkBingo()
-            } else {
-                Toast.makeText(this, "写真の撮影がキャンセルされました", Toast.LENGTH_SHORT).show()
+    private val missions = List(16) { "ミッション ${it + 1}" }
+
+    private val previewLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result: ActivityResult ->
+        if (result.resultCode == RESULT_OK) {
+            val savedUriString = result.data?.getStringExtra("savedUri")
+            val savedUri = Uri.parse(savedUriString)
+            adapter.setImage(currentPosition, savedUri)
+            saveToGallery(File(savedUri.path!!))
+        }
+        closeCamera()
+    }
+
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+            val granted = permissions[Manifest.permission.CAMERA] == true
+            if (!granted) {
+                Log.e("Camera", "Camera permission not granted")
             }
         }
 
@@ -44,113 +62,113 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         recyclerView = findViewById(R.id.recyclerView)
-        recyclerView.layoutManager = GridLayoutManager(this, 4)
+        previewView = findViewById(R.id.previewView)
+        btnCapture = findViewById(R.id.btnCapture)
 
-        missions = intent.getStringArrayListExtra("missions") ?: emptyList()
         adapter = BingoAdapter(missions) { position ->
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.CAMERA
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                currentPosition = position
-                openCamera()
-            } else {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.CAMERA),
-                    100
-                )
-            }
+            currentPosition = position
+            startCamera()
         }
 
+        recyclerView.layoutManager = GridLayoutManager(this, 4)
         recyclerView.adapter = adapter
+
+        btnCapture.setOnClickListener { takePhoto() }
+        requestPermissionsIfNeeded()
     }
 
-    private fun openCamera() {
-        val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-
-        try {
-            val photoFile = createImageFile()
-            val photoURI: Uri = FileProvider.getUriForFile(
-                this,
-                "${applicationContext.packageName}.fileprovider",
-                photoFile
-            )
-
-            currentPhotoUri = photoURI
-            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
-            takePictureIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-            takePictureIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-
-            // ✅ AQUOS対策：全てのカメラアプリにURI権限を渡す
-            val resInfoList =
-                packageManager.queryIntentActivities(takePictureIntent, PackageManager.MATCH_DEFAULT_ONLY)
-            for (resolveInfo in resInfoList) {
-                val packageName = resolveInfo.activityInfo.packageName
-                grantUriPermission(
-                    packageName,
-                    photoURI,
-                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
-            }
-
-            if (takePictureIntent.resolveActivity(packageManager) != null) {
-                takePictureLauncher.launch(takePictureIntent)
-            } else {
-                Toast.makeText(this, "カメラアプリが見つかりませんでした", Toast.LENGTH_LONG).show()
-            }
-
-        } catch (ex: Exception) {
-            Toast.makeText(this, "カメラを起動できませんでした: ${ex.message}", Toast.LENGTH_LONG).show()
-        }
-    }
-
-    private fun createImageFile(): File {
-        val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        val storageDir: File? = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-        return File.createTempFile(
-            "BINGO_${timeStamp}_",
-            ".jpg",
-            storageDir
-        )
-    }
-
-    private fun checkBingo() {
-        val imageStates = (0 until missions.size).map { adapter.hasImage(it) }
-        val gridSize = 4
-
-        for (i in 0 until gridSize) {
-            if ((0 until gridSize).all { imageStates[i * gridSize + it] }) {
-                Toast.makeText(this, "🎉 ビンゴ！横一列！", Toast.LENGTH_SHORT).show()
-                return
-            }
-            if ((0 until gridSize).all { imageStates[it * gridSize + i] }) {
-                Toast.makeText(this, "🎉 ビンゴ！縦一列！", Toast.LENGTH_SHORT).show()
-                return
-            }
-        }
-
-        if ((0 until gridSize).all { imageStates[it * gridSize + it] }) {
-            Toast.makeText(this, "🎉 ビンゴ！斜め！", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        if ((0 until gridSize).all { imageStates[it * gridSize + (gridSize - 1 - it)] }) {
-            Toast.makeText(this, "🎉 ビンゴ！斜め！", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == 100 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            openCamera()
+    private fun requestPermissionsIfNeeded() {
+        val permissions = mutableListOf(Manifest.permission.CAMERA)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
         } else {
-            Toast.makeText(this, "カメラの許可が必要です", Toast.LENGTH_SHORT).show()
+            permissions.add(Manifest.permission.READ_MEDIA_IMAGES)
         }
+        requestPermissionLauncher.launch(permissions.toTypedArray())
+    }
+
+    private fun startCamera() {
+        previewView.visibility = View.VISIBLE
+        btnCapture.visibility = View.VISIBLE
+        recyclerView.visibility = View.GONE
+
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
+        cameraProviderFuture.addListener({
+            val cameraProvider = cameraProviderFuture.get()
+            val preview = Preview.Builder().build().also {
+                it.setSurfaceProvider(previewView.surfaceProvider)
+            }
+
+            imageCapture = ImageCapture.Builder()
+                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                .build()
+
+            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+
+            try {
+                cameraProvider.unbindAll()
+                cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
+            } catch (e: Exception) {
+                Log.e("CameraX", "Use case binding failed", e)
+            }
+        }, ContextCompat.getMainExecutor(this))
+    }
+
+    private fun takePhoto() {
+        val imageCapture = imageCapture ?: return
+        val name = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(System.currentTimeMillis()) + ".jpg"
+        tempPhotoFile = File(externalCacheDir, name)
+        val outputOptions = ImageCapture.OutputFileOptions.Builder(tempPhotoFile!!).build()
+
+        imageCapture.takePicture(outputOptions, ContextCompat.getMainExecutor(this),
+            object : ImageCapture.OnImageSavedCallback {
+                override fun onError(exc: ImageCaptureException) {
+                    Log.e("CameraX", "Photo capture failed: ${exc.message}", exc)
+                }
+
+                override fun onImageSaved(output: ImageCapture.OutputFileResults) {
+                    val savedUri = Uri.fromFile(tempPhotoFile)
+                    openPreview(savedUri)
+                }
+            })
+    }
+
+    private fun openPreview(uri: Uri) {
+        val intent = Intent(this, PreviewActivity::class.java)
+        intent.putExtra("imageUri", uri.toString())
+        previewLauncher.launch(intent)
+    }
+
+    private fun saveToGallery(photoFile: File) {
+        val name = photoFile.name
+        val values = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, name)
+            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/BingoApp")
+            }
+        }
+
+        val resolver = contentResolver
+        val uri: Uri? =
+            resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+
+        uri?.let {
+            try {
+                val outputStream: OutputStream? = resolver.openOutputStream(it)
+                photoFile.inputStream().use { input ->
+                    outputStream?.use { output -> input.copyTo(output) }
+                }
+                Log.i("Gallery", "Photo saved to gallery: $it")
+            } catch (e: Exception) {
+                Log.e("Gallery", "Failed to save image to gallery", e)
+            }
+        }
+    }
+
+    private fun closeCamera() {
+        previewView.visibility = View.GONE
+        btnCapture.visibility = View.GONE
+        recyclerView.visibility = View.VISIBLE
     }
 }

@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.bingoapp">
 
-    <!-- カメラ使用許可 -->
+    <!-- ✅ 権限 -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
     <application
         android:allowBackup="true"
@@ -14,7 +15,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.BingoApp">
 
-        <!-- 起動アクティビティ -->
         <activity
             android:name=".ui.theme.LauncherActivity"
             android:exported="true">
@@ -24,20 +24,8 @@
             </intent-filter>
         </activity>
 
-        <!-- 他アクティビティ -->
         <activity android:name=".MainActivity" android:exported="false"/>
         <activity android:name=".SurveyActivity" android:exported="false"/>
-
-        <!-- FileProvider設定 -->
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.fileprovider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths"/>
-        </provider>
-
+        <activity android:name=".PreviewActivity" android:exported="false"/>
     </application>
 </manifest>
