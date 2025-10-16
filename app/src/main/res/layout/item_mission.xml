@@ -1,25 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="0dp"
-    android:layout_height="wrap_content"
+    android:layout_width="90dp"
+    android:layout_height="90dp"
     android:layout_margin="4dp"
-    android:layout_weight="1"
-    android:background="@drawable/bingo_cell_border">
+    android:background="@drawable/border">
 
     <ImageView
         android:id="@+id/missionImage"
         android:layout_width="match_parent"
-        android:layout_height="100dp"
+        android:layout_height="match_parent"
         android:scaleType="centerCrop"
-        android:contentDescription="写真表示" />
+        android:src="@drawable/placeholder_image" />
 
     <TextView
         android:id="@+id/missionText"
         android:layout_width="match_parent"
-        android:layout_height="100dp"
+        android:layout_height="match_parent"
         android:gravity="center"
+        android:text="ミッション"
         android:textColor="@android:color/black"
-        android:background="@android:color/white"
-        android:textSize="12sp" />
-
+        android:textSize="12sp"
+        android:background="#80FFFFFF" />
 </FrameLayout>

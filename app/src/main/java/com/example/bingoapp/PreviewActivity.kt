@@ -1,8 +1,7 @@
 package com.example.bingoapp
 
-import android.app.Activity
 import android.content.Intent
-import android.net.Uri
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.widget.Button
 import android.widget.ImageView
@@ -10,32 +9,48 @@ import androidx.appcompat.app.AppCompatActivity
 
 class PreviewActivity : AppCompatActivity() {
 
-    private lateinit var imagePreview: ImageView
+    private lateinit var imageView: ImageView
+    private lateinit var btnOk: Button
     private lateinit var btnRetake: Button
-    private lateinit var btnSave: Button
+    private var photoPath: String? = null
+    private var missionIndex: Int = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_preview)
 
-        imagePreview = findViewById(R.id.imagePreview)
+        imageView = findViewById(R.id.previewImage)
+        btnOk = findViewById(R.id.btnOk)
         btnRetake = findViewById(R.id.btnRetake)
-        btnSave = findViewById(R.id.btnSave)
 
-        val imageUriString = intent.getStringExtra("imageUri")
-        val imageUri = Uri.parse(imageUriString)
-        imagePreview.setImageURI(imageUri)
+        photoPath = intent.getStringExtra("PHOTO_PATH")
+        missionIndex = intent.getIntExtra("MISSION_INDEX", -1)
 
-        btnRetake.setOnClickListener {
-            setResult(Activity.RESULT_CANCELED)
+        // 画像プレビュー表示
+        photoPath?.let {
+            val bitmap = BitmapFactory.decodeFile(it)
+            imageView.setImageBitmap(bitmap)
+        }
+
+        // OK → 保存して結果を返す
+        btnOk.setOnClickListener {
+            val prefs = getSharedPreferences("bingo_prefs", MODE_PRIVATE)
+            prefs.edit().putString("photo_$missionIndex", photoPath).apply()
+
+            val resultIntent = Intent().apply {
+                putExtra("MISSION_INDEX", missionIndex)
+                putExtra("PHOTO_PATH", photoPath)
+            }
+            setResult(RESULT_OK, resultIntent)
             finish()
         }
 
-        btnSave.setOnClickListener {
-            val resultIntent = Intent().apply {
-                putExtra("savedUri", imageUriString)
+        // 撮り直し → カメラに戻る
+        btnRetake.setOnClickListener {
+            val intent = Intent(this, CameraActivity::class.java).apply {
+                putExtra("MISSION_INDEX", missionIndex)
             }
-            setResult(Activity.RESULT_OK, resultIntent)
+            startActivity(intent)
             finish()
         }
     }

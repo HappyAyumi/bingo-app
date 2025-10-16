@@ -1,6 +1,8 @@
 package com.example.bingoapp
 
-import android.net.Uri
+import android.content.Context
+import android.content.Intent
+import android.graphics.BitmapFactory
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,52 +11,43 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
 class BingoAdapter(
-    private val missions: List<String>,
-    private val onItemClick: (Int) -> Unit
+    private val context: Context,
+    private val missions: List<String>
 ) : RecyclerView.Adapter<BingoAdapter.BingoViewHolder>() {
 
-    private val imageUris = MutableList<Uri?>(missions.size) { null }
-
-    class BingoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val imageMission: ImageView = itemView.findViewById(R.id.imageMission)
-        val textMission: TextView = itemView.findViewById(R.id.textMission)
+    class BingoViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val text: TextView = view.findViewById(R.id.missionText)
+        val image: ImageView = view.findViewById(R.id.missionImage)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BingoViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_bingo, parent, false)
+            .inflate(R.layout.item_mission, parent, false)
         return BingoViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: BingoViewHolder, position: Int) {
-        holder.textMission.text = missions[position]
+        val mission = missions[position]
+        holder.text.text = mission
 
-        val uri = imageUris[position]
-        if (uri != null) {
-            holder.imageMission.setImageURI(uri)
-            holder.imageMission.visibility = View.VISIBLE
+        val prefs = context.getSharedPreferences("bingo_prefs", Context.MODE_PRIVATE)
+        val photoPath = prefs.getString("photo_$position", null)
+
+        if (photoPath != null) {
+            val bitmap = BitmapFactory.decodeFile(photoPath)
+            holder.image.setImageBitmap(bitmap)
+            holder.text.alpha = 0.3f
         } else {
-            // 画像がない場合は非表示
-            holder.imageMission.visibility = View.GONE
+            holder.image.setImageResource(R.drawable.placeholder_image)
+            holder.text.alpha = 1f
         }
 
         holder.itemView.setOnClickListener {
-            onItemClick(position)
+            val intent = Intent(context, CameraActivity::class.java)
+            intent.putExtra("MISSION_INDEX", position)
+            context.startActivity(intent)
         }
     }
 
-    override fun getItemCount(): Int = missions.size
-
-    fun hasImage(position: Int): Boolean {
-        return imageUris[position] != null
-    }
-
-    fun setImage(position: Int, uri: Uri) {
-        imageUris[position] = uri
-        notifyItemChanged(position)
-    }
-
-    fun getImageUris(): List<Uri?> = imageUris
-
-    fun getMissions(): List<String> = missions
+    override fun getItemCount() = missions.size
 }
