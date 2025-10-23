@@ -1,7 +1,6 @@
 package com.example.bingoapp
 
 import android.content.Context
-import android.content.Intent
 import android.graphics.BitmapFactory
 import android.view.LayoutInflater
 import android.view.View
@@ -12,8 +11,18 @@ import androidx.recyclerview.widget.RecyclerView
 
 class BingoAdapter(
     private val context: Context,
-    private val missions: List<String>
+    private val missions: List<String>,
+    private val onItemClick: (Int) -> Unit
 ) : RecyclerView.Adapter<BingoAdapter.BingoViewHolder>() {
+
+    private val photoPaths = MutableList<String?>(missions.size) { null }
+
+    init {
+        val prefs = context.getSharedPreferences("bingo_prefs", Context.MODE_PRIVATE)
+        missions.indices.forEach { i ->
+            photoPaths[i] = prefs.getString("photo_$i", null)
+        }
+    }
 
     class BingoViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val text: TextView = view.findViewById(R.id.missionText)
@@ -30,24 +39,24 @@ class BingoAdapter(
         val mission = missions[position]
         holder.text.text = mission
 
-        val prefs = context.getSharedPreferences("bingo_prefs", Context.MODE_PRIVATE)
-        val photoPath = prefs.getString("photo_$position", null)
-
-        if (photoPath != null) {
-            val bitmap = BitmapFactory.decodeFile(photoPath)
+        val path = photoPaths[position]
+        if (path != null) {
+            val bitmap = BitmapFactory.decodeFile(path)
             holder.image.setImageBitmap(bitmap)
-            holder.text.alpha = 0.3f
+            holder.text.alpha = 0.4f
         } else {
             holder.image.setImageResource(R.drawable.placeholder_image)
             holder.text.alpha = 1f
         }
 
-        holder.itemView.setOnClickListener {
-            val intent = Intent(context, CameraActivity::class.java)
-            intent.putExtra("MISSION_INDEX", position)
-            context.startActivity(intent)
-        }
+        holder.itemView.setOnClickListener { onItemClick(position) }
     }
 
     override fun getItemCount() = missions.size
+
+    // ✅ 即時更新用関数
+    fun updatePhoto(position: Int, path: String) {
+        photoPaths[position] = path
+        notifyItemChanged(position)
+    }
 }

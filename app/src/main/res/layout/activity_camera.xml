@@ -1,29 +1,69 @@
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/cameraLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".CameraActivity">
+    android:background="#000">
 
     <!-- カメラプレビュー -->
     <androidx.camera.view.PreviewView
         android:id="@+id/previewView"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/btnCapture"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
     <!-- 撮影ボタン -->
     <Button
         android:id="@+id/btnCapture"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
         android:text="撮影"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/previewView"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:textSize="28sp"
+        android:layout_gravity="center|bottom"
+        android:layout_marginBottom="60dp"
+        android:backgroundTint="#FFFFFF"
+        android:textColor="#000000" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <!-- プレビュー確認画面 -->
+    <LinearLayout
+        android:id="@+id/previewContainer"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:visibility="gone"
+        android:background="#CC000000">
+
+        <ImageView
+            android:id="@+id/confirmImage"
+            android:layout_width="300dp"
+            android:layout_height="400dp"
+            android:scaleType="centerCrop"
+            android:layout_gravity="center"
+            android:layout_marginBottom="16dp" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <Button
+                android:id="@+id/btnConfirmRetry"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="撮り直し"
+                android:layout_marginEnd="24dp"
+                android:backgroundTint="#DD4444"
+                android:textColor="#FFFFFF" />
+
+            <Button
+                android:id="@+id/btnConfirmOk"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="保存"
+                android:backgroundTint="#44DD44"
+                android:textColor="#FFFFFF" />
+        </LinearLayout>
+    </LinearLayout>
+
+</FrameLayout>

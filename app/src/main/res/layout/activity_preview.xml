@@ -1,18 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center"
-    android:background="#000000"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black">
 
     <ImageView
         android:id="@+id/previewImage"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:adjustViewBounds="true"
         android:scaleType="fitCenter"
         android:contentDescription="撮影プレビュー" />
 
@@ -21,26 +20,19 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:orientation="horizontal"
-        android:layout_marginTop="16dp">
-
-        <Button
-            android:id="@+id/btnOk"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:text="OK"
-            android:backgroundTint="#4CAF50"
-            android:textColor="#FFFFFF"
-            android:layout_margin="8dp" />
+        android:padding="16dp">
 
         <Button
             android:id="@+id/btnRetake"
-            android:layout_width="0dp"
-            android:layout_weight="1"
+            android:text="🔁 撮り直し"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="撮り直し"
-            android:backgroundTint="#F44336"
-            android:textColor="#FFFFFF"
-            android:layout_margin="8dp" />
+            android:layout_marginEnd="32dp" />
+
+        <Button
+            android:id="@+id/btnSave"
+            android:text="✅ 保存"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
     </LinearLayout>
 </LinearLayout>

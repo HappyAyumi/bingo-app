@@ -8,18 +8,14 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <Button
-        android:id="@+id/btnCamera"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="カメラを起動"
-        android:layout_marginBottom="16dp" />
 
     <Button
-        android:id="@+id/btnNotify"
+        android:id="@+id/btnReset"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="通知テスト" />
+        android:text="ビンゴカードを更新"
+        android:layout_margin="16dp"
+        android:layout_gravity="center_horizontal" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
