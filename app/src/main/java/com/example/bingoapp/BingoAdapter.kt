@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.RecyclerView
 
 class BingoAdapter(
     private val context: Context,
-    private val missions: List<String>,
+    private var missions: List<String>, // ← var に変更！
     private val onItemClick: (Int) -> Unit
 ) : RecyclerView.Adapter<BingoAdapter.BingoViewHolder>() {
 
@@ -54,9 +54,17 @@ class BingoAdapter(
 
     override fun getItemCount() = missions.size
 
-    // ✅ 即時更新用関数
+    // ✅ 写真更新
     fun updatePhoto(position: Int, path: String) {
         photoPaths[position] = path
         notifyItemChanged(position)
+    }
+
+    // ✅ ビンゴカード全体を更新（お題と写真リセット）
+    fun updateMissions(newMissions: List<String>) {
+        missions = newMissions
+        photoPaths.clear()
+        photoPaths.addAll(List(missions.size) { null })
+        notifyDataSetChanged()
     }
 }

@@ -1,23 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.bingoapp">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- ✅ カメラ機能の宣言 -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
         android:theme="@style/Theme.BingoApp">
 
-        <!-- ✅ メイン画面（必ず exported="true"） -->
+        <!-- ✅ 最初の画面 -->
         <activity
-            android:name=".MainActivity"
+            android:name=".ThemeSelectActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -25,15 +21,22 @@
             </intent-filter>
         </activity>
 
+        <!-- ✅ メイン画面 -->
+        <activity android:name=".MainActivity" android:exported="false" />
+
         <!-- ✅ カメラ画面 -->
-        <activity
-            android:name=".CameraActivity"
-            android:exported="false" />
+        <activity android:name=".CameraActivity" android:exported="false" />
 
-        <!-- ✅ 通知受信用 -->
-        <receiver
-            android:name=".NotificationReceiver"
-            android:exported="false" />
+        <!-- ✅ FileProvider設定 -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
     </application>
-
 </manifest>
