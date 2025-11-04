@@ -1,7 +1,7 @@
 package com.example.bingoapp
 
 import android.content.Context
-import android.graphics.BitmapFactory
+import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,60 +11,52 @@ import androidx.recyclerview.widget.RecyclerView
 
 class BingoAdapter(
     private val context: Context,
-    private var missions: List<String>, // ← var に変更！
+    private val missions: List<String>,
     private val onItemClick: (Int) -> Unit
 ) : RecyclerView.Adapter<BingoAdapter.BingoViewHolder>() {
 
-    private val photoPaths = MutableList<String?>(missions.size) { null }
+    // 各マスの画像状態を保存
+    private val photos = mutableMapOf<Int, String?>()
 
-    init {
-        val prefs = context.getSharedPreferences("bingo_prefs", Context.MODE_PRIVATE)
-        missions.indices.forEach { i ->
-            photoPaths[i] = prefs.getString("photo_$i", null)
+    inner class BingoViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val missionText: TextView = view.findViewById(R.id.missionText)
+        val missionImage: ImageView = view.findViewById(R.id.missionImage)
+
+        init {
+            // ✅ マスをタップしたときにカメラ起動（MainActivity に通知）
+            view.setOnClickListener {
+                val position = adapterPosition
+                if (position != RecyclerView.NO_POSITION) {
+                    onItemClick(position)
+                }
+            }
         }
     }
 
-    class BingoViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val text: TextView = view.findViewById(R.id.missionText)
-        val image: ImageView = view.findViewById(R.id.missionImage)
-    }
-
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BingoViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_mission, parent, false)
+        val view = LayoutInflater.from(context).inflate(R.layout.item_mission, parent, false)
         return BingoViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: BingoViewHolder, position: Int) {
-        val mission = missions[position]
-        holder.text.text = mission
+        holder.missionText.text = missions[position]
 
-        val path = photoPaths[position]
-        if (path != null) {
-            val bitmap = BitmapFactory.decodeFile(path)
-            holder.image.setImageBitmap(bitmap)
-            holder.text.alpha = 0.4f
+        val photoPath = photos[position]
+        if (photoPath != null) {
+            holder.missionImage.setImageURI(Uri.parse(photoPath))
+            holder.missionImage.visibility = View.VISIBLE
+            holder.missionText.alpha = 0.5f
         } else {
-            holder.image.setImageResource(R.drawable.placeholder_image)
-            holder.text.alpha = 1f
+            holder.missionImage.setImageResource(R.drawable.placeholder_image)
+            holder.missionText.alpha = 1f
         }
-
-        holder.itemView.setOnClickListener { onItemClick(position) }
     }
 
-    override fun getItemCount() = missions.size
+    override fun getItemCount(): Int = missions.size
 
-    // ✅ 写真更新
-    fun updatePhoto(position: Int, path: String) {
-        photoPaths[position] = path
-        notifyItemChanged(position)
-    }
-
-    // ✅ ビンゴカード全体を更新（お題と写真リセット）
-    fun updateMissions(newMissions: List<String>) {
-        missions = newMissions
-        photoPaths.clear()
-        photoPaths.addAll(List(missions.size) { null })
-        notifyDataSetChanged()
+    // ✅ カメラ撮影後に画像を更新
+    fun updatePhoto(index: Int, path: String) {
+        photos[index] = path
+        notifyItemChanged(index)
     }
 }
