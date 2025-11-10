@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("kotlin-kapt") // ← Glide用
 }
 
 android {
@@ -50,23 +51,31 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 
     // --- CameraX (安定版) ---
-    implementation("androidx.camera:camera-core:1.3.3")
-    implementation("androidx.camera:camera-camera2:1.3.3")
-    implementation("androidx.camera:camera-lifecycle:1.3.3")
-    implementation("androidx.camera:camera-view:1.3.3")
+    val camerax_version = "1.3.4"
+    implementation("androidx.camera:camera-core:$camerax_version")
+    implementation("androidx.camera:camera-camera2:$camerax_version")
+    implementation("androidx.camera:camera-lifecycle:$camerax_version")
+    implementation("androidx.camera:camera-view:$camerax_version")
 
     // --- Gson (保存機能用) ---
     implementation("com.google.code.gson:gson:2.10.1")
 
-    // --- Compose 依存関係 ---
-    val composeBom = platform("androidx.compose:compose-bom:2023.08.00")
+    // --- Glide (画像表示用) ---
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    kapt("com.github.bumptech.glide:compiler:4.16.0")
+
+    // --- RecyclerView ---
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
+
+    // --- Compose 依存関係（ランタイム含む）---
+    val composeBom = platform("androidx.compose:compose-bom:2024.06.00")
     implementation(composeBom)
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation("androidx.compose.runtime:runtime") // ← ★これが重要！！
     implementation("androidx.compose.material3:material3")
 
-    // RecyclerView
-    implementation("androidx.recyclerview:recyclerview:1.3.2")
-
+    debugImplementation("androidx.compose.ui:ui-tooling")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
 }

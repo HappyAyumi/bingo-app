@@ -15,17 +15,19 @@ class BingoAdapter(
     private val onItemClick: (Int) -> Unit
 ) : RecyclerView.Adapter<BingoAdapter.BingoViewHolder>() {
 
-    // 各マスの画像状態を保存
     private val photos = mutableMapOf<Int, String?>()
 
     inner class BingoViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val missionText: TextView = view.findViewById(R.id.missionText)
-        val missionImage: ImageView = view.findViewById(R.id.missionImage)
+        val textMission: TextView = view.findViewById(R.id.missionText)
+        val imagePhoto: ImageView = view.findViewById(R.id.missionImage)
 
         init {
-            // ✅ マスをタップしたときにカメラ起動（MainActivity に通知）
+            view.isClickable = true
+            view.isFocusable = true
+
+            // ✅ マスをタップしたときにイベント発火
             view.setOnClickListener {
-                val position = adapterPosition
+                val position = bindingAdapterPosition
                 if (position != RecyclerView.NO_POSITION) {
                     onItemClick(position)
                 }
@@ -39,22 +41,19 @@ class BingoAdapter(
     }
 
     override fun onBindViewHolder(holder: BingoViewHolder, position: Int) {
-        holder.missionText.text = missions[position]
+        holder.textMission.text = missions[position]
 
         val photoPath = photos[position]
         if (photoPath != null) {
-            holder.missionImage.setImageURI(Uri.parse(photoPath))
-            holder.missionImage.visibility = View.VISIBLE
-            holder.missionText.alpha = 0.5f
+            holder.imagePhoto.setImageURI(Uri.parse(photoPath))
+            holder.imagePhoto.visibility = View.VISIBLE
         } else {
-            holder.missionImage.setImageResource(R.drawable.placeholder_image)
-            holder.missionText.alpha = 1f
+            holder.imagePhoto.visibility = View.INVISIBLE
         }
     }
 
     override fun getItemCount(): Int = missions.size
 
-    // ✅ カメラ撮影後に画像を更新
     fun updatePhoto(index: Int, path: String) {
         photos[index] = path
         notifyItemChanged(index)

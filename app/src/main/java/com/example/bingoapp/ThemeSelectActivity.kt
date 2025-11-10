@@ -8,27 +8,33 @@ import androidx.appcompat.app.AppCompatActivity
 
 class ThemeSelectActivity : AppCompatActivity() {
 
+    private lateinit var startButton: Button
+    private var selectedTheme: String = "default"
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_theme_select)
 
-        val btnStart: Button = findViewById(R.id.btnStart)
+        startButton = findViewById(R.id.startButton)
 
-        btnStart.setOnClickListener {
-            val selectedTheme = when {
-                findViewById<RadioButton>(R.id.radioStudy).isChecked -> "勉強"
-                findViewById<RadioButton>(R.id.radioExercise).isChecked -> "運動"
-                findViewById<RadioButton>(R.id.radioHobby).isChecked -> "趣味"
-                findViewById<RadioButton>(R.id.radioLife).isChecked -> "生活"
-                else -> "勉強"
-            }
+        val theme1: RadioButton = findViewById(R.id.theme1)
+        val theme2: RadioButton = findViewById(R.id.theme2)
+        val theme3: RadioButton = findViewById(R.id.theme3)
 
-            val prefs = getSharedPreferences("bingo_prefs", MODE_PRIVATE)
-            prefs.edit().putString("selected_theme", selectedTheme).apply()
+        theme1.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) selectedTheme = "theme1"
+        }
+        theme2.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) selectedTheme = "theme2"
+        }
+        theme3.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) selectedTheme = "theme3"
+        }
 
+        startButton.setOnClickListener {
             val intent = Intent(this, MainActivity::class.java)
+            intent.putExtra("selectedTheme", selectedTheme)
             startActivity(intent)
-            finish()
         }
     }
 }
