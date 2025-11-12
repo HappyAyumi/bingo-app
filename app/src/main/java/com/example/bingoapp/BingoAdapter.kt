@@ -10,42 +10,34 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 
 class BingoAdapter(
-    private val missions: List<String>,
+    private val cells: List<BingoCell>,
     private val onItemClick: (Int) -> Unit
-) : RecyclerView.Adapter<BingoAdapter.BingoViewHolder>() {
+) : RecyclerView.Adapter<BingoAdapter.CellViewHolder>() {
 
-    private val imageUris = MutableList<Uri?>(missions.size) { null }
-
-    inner class BingoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val missionText: TextView = itemView.findViewById(R.id.mission_text)
-        val missionImage: ImageView = itemView.findViewById(R.id.mission_image)
+    inner class CellViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val textView: TextView = view.findViewById(R.id.cellText)
+        val imageView: ImageView = view.findViewById(R.id.cellImage)
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BingoViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CellViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.bingo_item_layout, parent, false)
-        return BingoViewHolder(view)
+            .inflate(R.layout.item_bingo_cell, parent, false)
+        return CellViewHolder(view)
     }
 
-    override fun onBindViewHolder(holder: BingoViewHolder, position: Int) {
-        holder.missionText.text = missions[position]
-        holder.itemView.setOnClickListener { onItemClick(position) }
-
-        val uri = imageUris[position]
-        if (uri != null) {
-            holder.missionImage.visibility = View.VISIBLE
-            Glide.with(holder.itemView.context).load(uri).into(holder.missionImage)
+    override fun onBindViewHolder(holder: CellViewHolder, position: Int) {
+        val cell = cells[position]
+        holder.textView.text = cell.text
+        if (cell.imageUri != null) {
+            Glide.with(holder.imageView.context)
+                .load(cell.imageUri)
+                .into(holder.imageView)
         } else {
-            holder.missionImage.visibility = View.GONE
+            holder.imageView.setImageResource(android.R.color.transparent)
         }
+
+        holder.itemView.setOnClickListener { onItemClick(position) }
     }
 
-    override fun getItemCount(): Int = missions.size
-
-    fun setImage(position: Int, uri: Uri) {
-        imageUris[position] = uri
-        notifyItemChanged(position)
-    }
-
-    fun hasImage(position: Int): Boolean = imageUris[position] != null
+    override fun getItemCount(): Int = cells.size
 }

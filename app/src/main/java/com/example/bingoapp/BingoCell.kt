@@ -1,6 +1,8 @@
 package com.example.bingoapp
 
+import android.net.Uri
+
 data class BingoCell(
-    var mission: String,
-    var photoPath: String? = null
+    val text: String,
+    var imageUri: Uri? = null
 )
