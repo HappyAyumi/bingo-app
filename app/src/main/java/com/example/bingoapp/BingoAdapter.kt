@@ -1,6 +1,5 @@
 package com.example.bingoapp
 
-import android.content.Context
 import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
@@ -15,54 +14,38 @@ class BingoAdapter(
     private val onItemClick: (Int) -> Unit
 ) : RecyclerView.Adapter<BingoAdapter.BingoViewHolder>() {
 
-    // 各マスに対応する画像URIを保持（nullの場合は未撮影）
     private val imageUris = MutableList<Uri?>(missions.size) { null }
 
-    inner class BingoViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val imageView: ImageView = view.findViewById(R.id.imageView)
-        val textView: TextView = view.findViewById(R.id.textView)
-
-        init {
-            view.setOnClickListener {
-                val position = bindingAdapterPosition
-                if (position != RecyclerView.NO_POSITION) {
-                    onItemClick(position)
-                }
-            }
-        }
+    inner class BingoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val missionText: TextView = itemView.findViewById(R.id.mission_text)
+        val missionImage: ImageView = itemView.findViewById(R.id.mission_image)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BingoViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_bingo, parent, false)
+            .inflate(R.layout.bingo_item_layout, parent, false)
         return BingoViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: BingoViewHolder, position: Int) {
-        holder.textView.text = missions[position]
+        holder.missionText.text = missions[position]
+        holder.itemView.setOnClickListener { onItemClick(position) }
 
         val uri = imageUris[position]
         if (uri != null) {
-            Glide.with(holder.itemView.context)
-                .load(uri)
-                .centerCrop()
-                .into(holder.imageView)
+            holder.missionImage.visibility = View.VISIBLE
+            Glide.with(holder.itemView.context).load(uri).into(holder.missionImage)
         } else {
-            // ⚠ ic_add_photo が存在しない環境でもビルド可能なように修正
-            holder.imageView.setImageResource(android.R.drawable.ic_menu_camera)
+            holder.missionImage.visibility = View.GONE
         }
     }
 
     override fun getItemCount(): Int = missions.size
 
-    /** 撮影 or 選択した画像を保存して表示 */
     fun setImage(position: Int, uri: Uri) {
         imageUris[position] = uri
         notifyItemChanged(position)
     }
 
-    /** 指定マスに画像があるかチェック */
-    fun hasImage(position: Int): Boolean {
-        return imageUris[position] != null
-    }
+    fun hasImage(position: Int): Boolean = imageUris[position] != null
 }

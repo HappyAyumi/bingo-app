@@ -1,59 +1,59 @@
 package com.example.bingoapp
 
 import android.Manifest
-import android.app.Activity
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
-import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import java.io.File
 import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 
 class CameraActivity : AppCompatActivity() {
 
+    private lateinit var previewView: PreviewView
     private lateinit var imageCapture: ImageCapture
-    private lateinit var btnCapture: Button
-    private var missionIndex: Int = -1
+    private lateinit var captureButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_camera)
 
-        btnCapture = findViewById(R.id.btnCapture)
-        missionIndex = intent.getIntExtra("MISSION_INDEX", -1)
+        previewView = findViewById(R.id.previewView)
+        captureButton = findViewById(R.id.captureButton)
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-            != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), 10)
-        } else {
+        if (allPermissionsGranted()) {
             startCamera()
+        } else {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.CAMERA),
+                10
+            )
         }
 
-        btnCapture.setOnClickListener { takePhoto() }
+        captureButton.setOnClickListener {
+            takePhoto()
+        }
     }
 
     private fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-
         cameraProviderFuture.addListener({
             val cameraProvider = cameraProviderFuture.get()
             val preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(findViewById<androidx.camera.view.PreviewView>(R.id.previewView).surfaceProvider)
+                it.setSurfaceProvider(previewView.surfaceProvider)
             }
 
             imageCapture = ImageCapture.Builder().build()
@@ -63,51 +63,40 @@ class CameraActivity : AppCompatActivity() {
                 cameraProvider.unbindAll()
                 cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
             } catch (e: Exception) {
-                Log.e("CameraX", "カメラ起動失敗", e)
+                Log.e("CameraActivity", "Camera binding failed", e)
             }
         }, ContextCompat.getMainExecutor(this))
     }
 
     private fun takePhoto() {
         val photoFile = File(
-            externalMediaDirs.firstOrNull(),
-            SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date()) + ".jpg"
+            externalMediaDirs.first(),
+            SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
+                .format(System.currentTimeMillis()) + ".jpg"
         )
 
         val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
-
-        imageCapture.takePicture(
-            outputOptions,
-            ContextCompat.getMainExecutor(this),
+        imageCapture.takePicture(outputOptions, ContextCompat.getMainExecutor(this),
             object : ImageCapture.OnImageSavedCallback {
                 override fun onError(exc: ImageCaptureException) {
-                    Toast.makeText(applicationContext, "撮影失敗: ${exc.message}", Toast.LENGTH_SHORT).show()
+                    Log.e("CameraActivity", "Photo capture failed: ${exc.message}", exc)
                 }
 
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                    val uri = Uri.fromFile(photoFile)
-                    val prefs = getSharedPreferences("bingo_prefs", Context.MODE_PRIVATE)
-                    prefs.edit().putString("photo_$missionIndex", uri.toString()).apply()
+                    val savedUri = Uri.fromFile(photoFile)
+                    Log.d("CameraActivity", "Photo capture succeeded: $savedUri")
 
-                    val resultIntent = Intent()
-                    resultIntent.putExtra("MISSION_INDEX", missionIndex)
-                    setResult(Activity.RESULT_OK, resultIntent)
+                    // 撮影後、BingoActivity に結果を返す
+                    val resultIntent = Intent().apply {
+                        putExtra("capturedImageUri", savedUri.toString())
+                    }
+                    setResult(RESULT_OK, resultIntent)
                     finish()
                 }
-            }
-        )
+            })
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        if (requestCode == 10 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            startCamera()
-        } else {
-            Toast.makeText(this, "カメラ権限が必要です", Toast.LENGTH_SHORT).show()
-            finish()
-        }
-    }
+    private fun allPermissionsGranted() = ContextCompat.checkSelfPermission(
+        this, Manifest.permission.CAMERA
+    ) == PackageManager.PERMISSION_GRANTED
 }

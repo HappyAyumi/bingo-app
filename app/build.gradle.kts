@@ -1,7 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("kotlin-kapt") // ← Glide用
+    id("kotlin-kapt")
 }
 
 android {
@@ -32,16 +32,6 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
-
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
 }
 
 dependencies {
@@ -50,30 +40,33 @@ dependencies {
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 
-    // --- CameraX (安定版) ---
+    // CameraX
     val camerax_version = "1.3.4"
     implementation("androidx.camera:camera-core:$camerax_version")
     implementation("androidx.camera:camera-camera2:$camerax_version")
     implementation("androidx.camera:camera-lifecycle:$camerax_version")
     implementation("androidx.camera:camera-view:$camerax_version")
 
-    // --- Gson (保存機能用) ---
+    // Activity result API（これが不足していました）
+    implementation("androidx.activity:activity-ktx:1.9.0")
+
+    // Gson
     implementation("com.google.code.gson:gson:2.10.1")
 
-    // --- Glide (画像表示用) ---
+    // Glide
     implementation("com.github.bumptech.glide:glide:4.16.0")
     kapt("com.github.bumptech.glide:compiler:4.16.0")
 
-    // --- RecyclerView ---
+    // RecyclerView
     implementation("androidx.recyclerview:recyclerview:1.3.2")
 
-    // --- Compose 依存関係（ランタイム含む）---
+    // Compose
     val composeBom = platform("androidx.compose:compose-bom:2024.06.00")
     implementation(composeBom)
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.runtime:runtime") // ← ★これが重要！！
+    implementation("androidx.compose.runtime:runtime")
     implementation("androidx.compose.material3:material3")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
