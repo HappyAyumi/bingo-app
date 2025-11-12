@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">BingoApp</string>
+    <string name="image_desc">写真を追加</string>
 </resources>
