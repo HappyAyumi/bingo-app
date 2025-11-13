@@ -64,4 +64,26 @@
         android:layout_weight="1"
         tools:listitem="@layout/item_bingo_cell" />
 
+    <GridLayout
+        android:id="@+id/bingoGrid"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:columnCount="5"
+        android:rowCount="5"
+        android:layout_marginTop="24dp"
+        android:padding="8dp"
+        android:gravity="center"
+        android:layout_gravity="center" />
+
+    <GridLayout
+        android:id="@+id/bingoGrid"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:columnCount="5"
+        android:rowCount="5"
+        android:layout_marginTop="24dp"
+        android:padding="8dp"
+        android:gravity="center"
+        android:layout_gravity="center" />
+
 </LinearLayout>
