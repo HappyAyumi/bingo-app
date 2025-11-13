@@ -24,7 +24,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var themeSpinner: Spinner
     private lateinit var resetButton: Button
 
-    private val bingoSize = 4  // 4×4 に変更
+    // 新規追加：レベル表示
+    private lateinit var levelText: TextView
+    private lateinit var levelProgress: ProgressBar
+    private val PREFS_NAME = "UserProgress"
+    private val KEY_POINTS = "points"
+
+    private val bingoSize = 4  // 4×4
 
     private val topicsByTheme = mapOf(
         "趣味" to listOf("流行りの漫画を読む", "新作映画鑑賞", "アクセサリーを手作りする", "自然の写真を撮る", "好きなアーティストのライブ映像を見る",
@@ -50,6 +56,10 @@ class MainActivity : AppCompatActivity() {
         bingoGrid = findViewById(R.id.bingoGrid)
         themeSpinner = findViewById(R.id.themeSpinner)
         resetButton = findViewById(R.id.resetButton)
+        levelText = findViewById(R.id.levelText)
+        levelProgress = findViewById(R.id.levelProgress)
+
+        updateLevelUI() // レベルUI更新
 
         // Spinner 設定
         val themes = topicsByTheme.keys.toList()
@@ -76,6 +86,63 @@ class MainActivity : AppCompatActivity() {
     }
 
     // --------------------
+    // ポイント＆レベル
+    // --------------------
+    private fun addPoints(points: Int) {
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        val current = prefs.getInt(KEY_POINTS, 0)
+        val newTotal = (current + points).coerceAtLeast(0)
+        prefs.edit().putInt(KEY_POINTS, newTotal).apply()
+
+        animatePointGain(points)
+        updateLevelUI()
+    }
+
+    private fun getPoints(): Int = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getInt(KEY_POINTS, 0)
+
+    private fun getLevelName(points: Int): String = when {
+        points < 100 -> "馬鹿"
+        points < 200 -> "凡人"
+        points < 300 -> "達人"
+        points < 400 -> "仙人"
+        else -> "神"
+    }
+
+    private fun updateLevelUI() {
+        val points = getPoints()
+        val levelName = getLevelName(points)
+        val levelProgressValue = points % 100
+        levelProgress.progress = levelProgressValue
+        val levelNumber = points / 100 + 1
+        levelText.text = "$levelName (Lv.$levelNumber)"
+    }
+
+    private fun animatePointGain(points: Int) {
+        if (points <= 0) return
+        val textView = TextView(this).apply {
+            text = "+${points}pt!"
+            textSize = 22f
+            setTextColor(ContextCompat.getColor(context, android.R.color.holo_orange_light))
+            alpha = 0f
+            translationY = 0f
+        }
+        val layout = findViewById<LinearLayout>(R.id.mainLayout)
+        layout.addView(textView)
+        textView.animate()
+            .alpha(1f)
+            .translationYBy(-150f)
+            .setDuration(800)
+            .withEndAction { layout.removeView(textView) }
+            .start()
+    }
+
+    private fun onCellCompleted() = addPoints(10)
+    private fun onBingoAchieved() {
+        addPoints(50)
+        Toast.makeText(this, "ビンゴ！+50pt✨", Toast.LENGTH_SHORT).show()
+    }
+
+    // --------------------
     // ビンゴ盤生成
     // --------------------
     private fun generateBingoTopics(theme: String, count: Int) = (topicsByTheme[theme] ?: listOf()).shuffled().take(count)
@@ -86,7 +153,6 @@ class MainActivity : AppCompatActivity() {
 
         for (topic in topics) {
             val frame = FrameLayout(this)
-
             val textView = TextView(this).apply {
                 text = topic
                 textSize = 16f
@@ -95,16 +161,14 @@ class MainActivity : AppCompatActivity() {
                 background = ContextCompat.getDrawable(context, android.R.drawable.btn_default)
                 setOnClickListener {
                     toggleSelection(this)
-                    if (checkBingo()) Toast.makeText(this@MainActivity, "ビンゴ！", Toast.LENGTH_SHORT).show()
+                    onCellCompleted()
+                    if (checkBingo()) onBingoAchieved()
                     saveCurrentState()
                     launchCameraForCell(bingoGrid.indexOfChild(frame))
                 }
             }
 
-            val imageView = ImageView(this).apply {
-                scaleType = ImageView.ScaleType.CENTER_CROP
-            }
-
+            val imageView = ImageView(this).apply { scaleType = ImageView.ScaleType.CENTER_CROP }
             frame.addView(textView)
             frame.addView(imageView)
 
@@ -118,7 +182,6 @@ class MainActivity : AppCompatActivity() {
 
             bingoGrid.addView(frame, params)
 
-            // 画像復元
             val file = File(filesDir, "cell_${bingoGrid.indexOfChild(frame)}.jpg")
             if (file.exists()) {
                 val bitmap = BitmapFactory.decodeFile(file.absolutePath)
@@ -181,7 +244,10 @@ class MainActivity : AppCompatActivity() {
             val selected = prefs.getBoolean("cell_$i", false)
             val frame = bingoGrid.getChildAt(i) as? FrameLayout ?: continue
             val textView = frame.getChildAt(0) as? TextView ?: continue
-            textView.setBackgroundColor(if (selected) ContextCompat.getColor(this, android.R.color.holo_blue_light) else ContextCompat.getColor(this, android.R.color.transparent))
+            textView.setBackgroundColor(
+                if (selected) ContextCompat.getColor(this, android.R.color.holo_blue_light)
+                else ContextCompat.getColor(this, android.R.color.transparent)
+            )
         }
     }
 
@@ -240,6 +306,7 @@ class MainActivity : AppCompatActivity() {
                 isFocusMode = false
                 focusButton.text = "集中モード開始"
                 timerText.text = "集中モード終了！"
+                addPoints(20) // 集中モードボーナス
                 Toast.makeText(applicationContext, "お疲れ様でした！", Toast.LENGTH_SHORT).show()
             }
         }.start()
@@ -253,9 +320,6 @@ class MainActivity : AppCompatActivity() {
         Toast.makeText(this, "集中モードを終了しました。", Toast.LENGTH_SHORT).show()
     }
 
-    // --------------------
-    // アプリを閉じた/ホームボタン押下時の警告
-    // --------------------
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
         if (isFocusMode) {
@@ -271,4 +335,3 @@ class MainActivity : AppCompatActivity() {
         focusTimer?.cancel()
     }
 }
-

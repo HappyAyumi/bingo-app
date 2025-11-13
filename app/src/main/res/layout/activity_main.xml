@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mainLayout"
     android:layout_width="match_parent"
@@ -16,79 +17,4 @@
         android:text="テーマ別ビンゴアプリ"
         android:textSize="22sp"
         android:textStyle="bold"
-        android:layout_gravity="center_horizontal"
-        android:paddingBottom="8dp" />
-
-    <!-- テーマ選択 -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="テーマを選択:"
-        android:textSize="16sp"
-        android:layout_marginTop="8dp" />
-
-    <Spinner
-        android:id="@+id/themeSpinner"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="12dp" />
-
-    <!-- 集中モード部分 -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:layout_marginBottom="12dp">
-
-        <Button
-            android:id="@+id/focusButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="集中モード開始" />
-
-        <TextView
-            android:id="@+id/timerText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:textSize="16sp"
-            android:text=""/>
-    </LinearLayout>
-
-    <!-- ビンゴボード -->
-    <GridLayout
-        android:id="@+id/bingoGrid"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:columnCount="4"
-        android:rowCount="4"
-        android:useDefaultMargins="true"
-        android:alignmentMode="alignMargins"
-        android:background="@android:color/darker_gray" />
-
-    <!-- ボタン群 -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:layout_marginTop="8dp">
-
-        <Button
-            android:id="@+id/resetButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="リセット"
-            android:layout_marginEnd="16dp"/>
-
-        <Button
-            android:id="@+id/startButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="ビンゴ開始" />
-    </LinearLayout>
-
-</LinearLayout>
-
+        android:layout_gravity="center_horizontal" android:paddingBottom="8dp" /> <!-- テーマ選択 --> <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="テーマを選択:" android:textSize="16sp" android:layout_marginTop="8dp" /> <Spinner android:id="@+id/themeSpinner" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp" /> <!-- 集中モード部分 --> <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:layout_marginBottom="12dp"> <Button android:id="@+id/focusButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="集中モード開始" /> <TextView android:id="@+id/timerText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="16dp" android:textSize="16sp" android:text=""/> </LinearLayout> <!-- ビンゴボード --> <GridLayout android:id="@+id/bingoGrid" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:columnCount="4" android:rowCount="4" android:useDefaultMargins="true" android:alignmentMode="alignMargins" android:background="@android:color/darker_gray" /> <!-- ボタン群 --> <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:layout_marginTop="8dp"> <Button android:id="@+id/resetButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="リセット" android:layout_marginEnd="16dp"/> <Button android:id="@+id/startButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="ビンゴ開始" /> </LinearLayout> <!-- レベル＆称号表示 --> <LinearLayout android:id="@+id/levelContainer" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="8dp" android:background="#EEEEEE" android:layout_marginBottom="8dp"> <TextView android:id="@+id/levelTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="あなたの称号" android:textSize="16sp" android:textStyle="bold" /> <TextView android:id="@+id/levelText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="凡人 (Lv.1)" android:textSize="18sp" android:textStyle="bold" android:paddingBottom="4dp" /> <ProgressBar android:id="@+id/levelProgress" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="12dp" android:max="100" android:progress="0" android:progressDrawable="@android:drawable/progress_horizontal" /> </LinearLayout> </LinearLayout>
