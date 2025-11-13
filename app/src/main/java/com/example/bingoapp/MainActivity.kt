@@ -271,3 +271,4 @@ class MainActivity : AppCompatActivity() {
         focusTimer?.cancel()
     }
 }
+
