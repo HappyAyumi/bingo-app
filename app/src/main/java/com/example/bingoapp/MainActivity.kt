@@ -4,36 +4,66 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.widget.Button
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 
 class MainActivity : AppCompatActivity() {
 
+    // --- 集中モード関連 ---
     private var isFocusMode = false
     private var focusTimer: CountDownTimer? = null
     private lateinit var focusButton: Button
     private lateinit var timerText: TextView
 
+    // --- ビンゴ関連 ---
+    private lateinit var bingoRecyclerView: RecyclerView
+    private lateinit var bingoAdapter: BingoAdapter
+    private lateinit var progressBar: ProgressBar
+    private lateinit var progressLabel: TextView
+
+    private val bingoCells = mutableListOf<BingoCell>()
+    private val bingoSize = 5 // 5x5ビンゴ
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // 集中モード用のボタンとタイマー表示をレイアウトに追加しておく
+        // --- View初期化 ---
         focusButton = findViewById(R.id.focusButton)
         timerText = findViewById(R.id.timerText)
+        bingoRecyclerView = findViewById(R.id.bingoRecyclerView)
+        progressBar = findViewById(R.id.progressBar)
+        progressLabel = findViewById(R.id.progressLabel)
 
-        // 集中モード開始ボタン
+        // --- ビンゴ盤セットアップ ---
+        setupBingoBoard()
+        bingoAdapter = BingoAdapter(bingoCells) {
+            updateProgress()
+        }
+        bingoRecyclerView.layoutManager = GridLayoutManager(this, bingoSize)
+        bingoRecyclerView.adapter = bingoAdapter
+
+        // --- 初期達成率 ---
+        updateProgress()
+
+        // --- 集中モードボタン ---
         focusButton.setOnClickListener {
             if (!isFocusMode) {
-                startFocusMode(10 * 60 * 1000) // 例: 10分間集中モード
+                startFocusMode(10 * 60 * 1000) // 例: 10分
             } else {
                 stopFocusMode()
             }
         }
     }
 
-    /** 集中モード開始 */
+    // --------------------------
+    // 🎯 集中モード制御
+    // --------------------------
+
     private fun startFocusMode(durationMillis: Long) {
         isFocusMode = true
         focusButton.text = "集中モード終了"
@@ -55,7 +85,6 @@ class MainActivity : AppCompatActivity() {
         }.start()
     }
 
-    /** 集中モード終了 */
     private fun stopFocusMode() {
         isFocusMode = false
         focusTimer?.cancel()
@@ -64,7 +93,7 @@ class MainActivity : AppCompatActivity() {
         Toast.makeText(this, "集中モードを終了しました。", Toast.LENGTH_SHORT).show()
     }
 
-    /** アプリがバックグラウンドに行った時の制御 */
+    /** 他アプリに移動しようとしたときの制御 */
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
         if (isFocusMode) {
@@ -78,5 +107,24 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         focusTimer?.cancel()
+    }
+
+    // --------------------------
+    // 🎯 ビンゴ機能
+    // --------------------------
+
+    private fun setupBingoBoard() {
+        bingoCells.clear()
+        for (i in 1..(bingoSize * bingoSize)) {
+            bingoCells.add(BingoCell("マス$i", null, false))
+        }
+    }
+
+    private fun updateProgress() {
+        val total = bingoCells.size
+        val opened = bingoCells.count { it.isOpened }
+        val progress = (opened.toFloat() / total * 100).toInt()
+        progressBar.progress = progress
+        progressLabel.text = "達成率：$progress%"
     }
 }

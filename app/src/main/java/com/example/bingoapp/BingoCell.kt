@@ -4,5 +4,6 @@ import android.net.Uri
 
 data class BingoCell(
     val text: String,
-    var imageUri: Uri? = null
+    val imageUri: Uri? = null,
+    var isOpened: Boolean = false  // ← 追加
 )

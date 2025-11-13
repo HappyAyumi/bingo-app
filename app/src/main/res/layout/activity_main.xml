@@ -4,7 +4,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:gravity="center_horizontal"
     android:padding="16dp"
     tools:context=".MainActivity">
 
@@ -13,39 +12,31 @@
         android:id="@+id/titleText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="AIビンゴアプリ"
+        android:text="ビンゴアプリ"
         android:textSize="24sp"
         android:textStyle="bold"
-        android:layout_marginBottom="12dp"
-        android:gravity="center" />
-
-    <!-- 集中モードタイマー -->
-    <TextView
-        android:id="@+id/timerText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="集中モードOFF"
-        android:textSize="18sp"
-        android:layout_marginBottom="4dp"
-        android:gravity="center" />
+        android:layout_marginBottom="16dp" />
 
     <!-- 集中モードボタン -->
     <Button
         android:id="@+id/focusButton"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="集中モード開始"
-        android:layout_marginBottom="16dp" />
+        android:backgroundTint="#4CAF50"
+        android:textColor="@android:color/white"
+        android:layout_marginBottom="8dp" />
 
-    <!-- 達成率バー -->
+    <!-- タイマー表示 -->
     <TextView
-        android:id="@+id/progressLabel"
+        android:id="@+id/timerText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="達成率：0%"
-        android:textSize="16sp"
-        android:layout_marginBottom="4dp" />
+        android:text=""
+        android:textSize="18sp"
+        android:layout_marginBottom="12dp" />
 
+    <!-- 達成率バー -->
     <ProgressBar
         android:id="@+id/progressBar"
         style="?android:attr/progressBarStyleHorizontal"
@@ -53,33 +44,24 @@
         android:layout_height="wrap_content"
         android:max="100"
         android:progress="0"
-        android:progressTint="@android:color/holo_green_dark"
-        android:layout_marginBottom="16dp" />
+        android:progressTint="#4CAF50"
+        android:layout_marginBottom="8dp" />
 
-    <!-- ビンゴカード表示 -->
+    <!-- 達成率テキスト -->
+    <TextView
+        android:id="@+id/progressLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="達成率：0%"
+        android:textSize="16sp"
+        android:layout_marginBottom="12dp" />
+
+    <!-- ビンゴ盤 -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/bingoRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_marginTop="8dp"
         tools:listitem="@layout/item_bingo_cell" />
-
-    <!-- お題生成ボタン -->
-    <Button
-        android:id="@+id/generateButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="お題をランダム生成"
-        android:layout_marginTop="8dp" />
-
-    <!-- Googleフォームアンケートボタン -->
-    <Button
-        android:id="@+id/formButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="アンケートに回答する"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="12dp" />
 
 </LinearLayout>
