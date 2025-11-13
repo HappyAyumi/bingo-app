@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mainLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -12,78 +13,81 @@
         android:id="@+id/titleText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="ビンゴアプリ"
-        android:textSize="24sp"
+        android:text="テーマ別ビンゴアプリ"
+        android:textSize="22sp"
         android:textStyle="bold"
-        android:layout_marginBottom="16dp" />
+        android:layout_gravity="center_horizontal"
+        android:paddingBottom="8dp" />
 
-    <!-- 集中モードボタン -->
-    <Button
-        android:id="@+id/focusButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="集中モード開始"
-        android:backgroundTint="#4CAF50"
-        android:textColor="@android:color/white"
-        android:layout_marginBottom="8dp" />
-
-    <!-- タイマー表示 -->
+    <!-- テーマ選択 -->
     <TextView
-        android:id="@+id/timerText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text=""
-        android:textSize="18sp"
-        android:layout_marginBottom="12dp" />
-
-    <!-- 達成率バー -->
-    <ProgressBar
-        android:id="@+id/progressBar"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:max="100"
-        android:progress="0"
-        android:progressTint="#4CAF50"
-        android:layout_marginBottom="8dp" />
-
-    <!-- 達成率テキスト -->
-    <TextView
-        android:id="@+id/progressLabel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="達成率：0%"
+        android:text="テーマを選択:"
         android:textSize="16sp"
+        android:layout_marginTop="8dp" />
+
+    <Spinner
+        android:id="@+id/themeSpinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:layout_marginBottom="12dp" />
 
-    <!-- ビンゴ盤 -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/bingoRecyclerView"
+    <!-- 集中モード部分 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="12dp">
+
+        <Button
+            android:id="@+id/focusButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="集中モード開始" />
+
+        <TextView
+            android:id="@+id/timerText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:textSize="16sp"
+            android:text=""/>
+    </LinearLayout>
+
+    <!-- ビンゴボード -->
+    <GridLayout
+        android:id="@+id/bingoGrid"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        tools:listitem="@layout/item_bingo_cell" />
+        android:columnCount="4"
+        android:rowCount="4"
+        android:useDefaultMargins="true"
+        android:alignmentMode="alignMargins"
+        android:background="@android:color/darker_gray" />
 
-    <GridLayout
-        android:id="@+id/bingoGrid"
+    <!-- ボタン群 -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:columnCount="5"
-        android:rowCount="5"
-        android:layout_marginTop="24dp"
-        android:padding="8dp"
+        android:orientation="horizontal"
         android:gravity="center"
-        android:layout_gravity="center" />
+        android:layout_marginTop="8dp">
 
-    <GridLayout
-        android:id="@+id/bingoGrid"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:columnCount="5"
-        android:rowCount="5"
-        android:layout_marginTop="24dp"
-        android:padding="8dp"
-        android:gravity="center"
-        android:layout_gravity="center" />
+        <Button
+            android:id="@+id/resetButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="リセット"
+            android:layout_marginEnd="16dp"/>
+
+        <Button
+            android:id="@+id/startButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ビンゴ開始" />
+    </LinearLayout>
 
 </LinearLayout>

@@ -69,6 +69,8 @@ dependencies {
     implementation("androidx.compose.runtime:runtime")
     implementation("androidx.compose.material3:material3")
 
+    implementation("androidx.gridlayout:gridlayout:1.0.0")
+
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
