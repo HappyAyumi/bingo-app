@@ -6,7 +6,6 @@ import android.graphics.Matrix
 import android.media.ExifInterface
 import android.os.Bundle
 import android.util.Log
-import android.view.Surface
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
@@ -14,13 +13,15 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import java.io.File
 import java.io.FileOutputStream
-import java.text.SimpleDateFormat
-import java.util.*
 
 class CameraActivity : AppCompatActivity() {
 
     private var imageCapture: ImageCapture? = null
     private var cellIndex: Int = -1
+
+    // カメラ切替用
+    private var lensFacing = CameraSelector.LENS_FACING_BACK
+    private var cameraProvider: ProcessCameraProvider? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,28 +31,54 @@ class CameraActivity : AppCompatActivity() {
 
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
         cameraProviderFuture.addListener({
-            val cameraProvider = cameraProviderFuture.get()
-            val preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(findViewById<androidx.camera.view.PreviewView>(R.id.previewView).surfaceProvider)
-            }
-
-            imageCapture = ImageCapture.Builder()
-                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-                .setTargetRotation(windowManager.defaultDisplay.rotation)
-                .build()
-
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-
-            try {
-                cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
-            } catch (e: Exception) {
-                Log.e("CameraActivity", "Camera binding failed", e)
-            }
+            cameraProvider = cameraProviderFuture.get()
+            startCamera()
         }, ContextCompat.getMainExecutor(this))
 
         findViewById<Button>(R.id.captureButton).setOnClickListener {
             takePhoto()
+        }
+
+        // カメラ切替ボタン
+        findViewById<Button>(R.id.btnSwitchCamera)?.setOnClickListener {
+            lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK)
+                CameraSelector.LENS_FACING_FRONT
+            else
+                CameraSelector.LENS_FACING_BACK
+
+            startCamera()
+        }
+    }
+
+    private fun startCamera() {
+        val provider = cameraProvider ?: return
+        val previewView = findViewById<androidx.camera.view.PreviewView>(R.id.previewView)
+
+        val preview = Preview.Builder().build().also {
+            it.setSurfaceProvider(previewView.surfaceProvider)
+        }
+
+        imageCapture = ImageCapture.Builder()
+            .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+            .setTargetRotation(windowManager.defaultDisplay.rotation)
+            .build()
+
+        val cameraSelector = CameraSelector.Builder()
+            .requireLensFacing(lensFacing)
+            .build()
+
+        // ★ 内カメラのときはプレビューを左右反転（ミラー解除）
+        if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
+            previewView.scaleX = -1f
+        } else {
+            previewView.scaleX = 1f
+        }
+
+        try {
+            provider.unbindAll()
+            provider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
+        } catch (e: Exception) {
+            Log.e("CameraActivity", "Camera binding failed", e)
         }
     }
 
@@ -63,8 +90,14 @@ class CameraActivity : AppCompatActivity() {
         imageCapture.takePicture(outputOptions, ContextCompat.getMainExecutor(this),
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                    // ここでExifの回転情報を読み取って補正
+
+                    // 回転補正
                     fixImageRotation(photoFile)
+
+                    // ★ 内カメラ使用時は左右反転も補正
+                    if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
+                        fixMirror(photoFile)
+                    }
 
                     val resultIntent = Intent()
                     resultIntent.putExtra("cellIndex", cellIndex)
@@ -76,6 +109,26 @@ class CameraActivity : AppCompatActivity() {
                     Log.e("CameraActivity", "Photo capture failed: ${exception.message}", exception)
                 }
             })
+    }
+
+    private fun fixMirror(photoFile: File) {
+        try {
+            val bitmap = BitmapFactory.decodeFile(photoFile.absolutePath)
+            val mirrored = mirrorBitmap(bitmap)
+
+            FileOutputStream(photoFile).use { out ->
+                mirrored.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, out)
+            }
+        } catch (e: Exception) {
+            Log.e("CameraActivity", "Mirror fix failed: ${e.message}", e)
+        }
+    }
+
+    // ★ 左右反転（ミラー補正）用
+    private fun mirrorBitmap(bitmap: android.graphics.Bitmap): android.graphics.Bitmap {
+        val matrix = Matrix()
+        matrix.preScale(-1f, 1f) // 左右反転
+        return android.graphics.Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
     }
 
     private fun fixImageRotation(photoFile: File) {
@@ -94,7 +147,6 @@ class CameraActivity : AppCompatActivity() {
                 else -> bitmap
             }
 
-            // 上書き保存
             FileOutputStream(photoFile).use { out ->
                 rotatedBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, out)
             }
@@ -110,4 +162,3 @@ class CameraActivity : AppCompatActivity() {
         return android.graphics.Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
     }
 }
-

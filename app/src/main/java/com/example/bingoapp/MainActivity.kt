@@ -18,19 +18,20 @@ class MainActivity : AppCompatActivity() {
 
     private var isFocusMode = false
     private var focusTimer: CountDownTimer? = null
+
     private lateinit var focusButton: Button
+    private lateinit var resetButton: Button
+    private lateinit var levelResetButton: Button
     private lateinit var timerText: TextView
     private lateinit var bingoGrid: GridLayout
     private lateinit var themeSpinner: Spinner
-    private lateinit var resetButton: Button
 
-    // 新規追加：レベル表示
     private lateinit var levelText: TextView
     private lateinit var levelProgress: ProgressBar
+
     private val PREFS_NAME = "UserProgress"
     private val KEY_POINTS = "points"
-
-    private val bingoSize = 4  // 4×4
+    private val bingoSize = 4
 
     private val topicsByTheme = mapOf(
         "趣味" to listOf("流行りの漫画を読む", "新作映画鑑賞", "アクセサリーを手作りする", "自然の写真を撮る", "好きなアーティストのライブ映像を見る",
@@ -52,10 +53,11 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         focusButton = findViewById(R.id.focusButton)
+        resetButton = findViewById(R.id.resetButton)
+        levelResetButton = findViewById(R.id.levelResetButton)
         timerText = findViewById(R.id.timerText)
         bingoGrid = findViewById(R.id.bingoGrid)
         themeSpinner = findViewById(R.id.themeSpinner)
-        resetButton = findViewById(R.id.resetButton)
         levelText = findViewById(R.id.levelText)
         levelProgress = findViewById(R.id.levelProgress)
 
@@ -82,6 +84,10 @@ class MainActivity : AppCompatActivity() {
 
         resetButton.setOnClickListener { resetBingoSheet() }
 
+        levelResetButton.setOnClickListener {
+            resetLevel()
+        }
+
         restoreThemeAndSelection()
     }
 
@@ -98,13 +104,20 @@ class MainActivity : AppCompatActivity() {
         updateLevelUI()
     }
 
+    private fun resetLevel() {
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        prefs.edit().putInt(KEY_POINTS, 0).apply()
+        updateLevelUI()
+        Toast.makeText(this, "レベルをリセットしました", Toast.LENGTH_SHORT).show()
+    }
+
     private fun getPoints(): Int = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getInt(KEY_POINTS, 0)
 
     private fun getLevelName(points: Int): String = when {
-        points < 100 -> "馬鹿"
-        points < 200 -> "凡人"
-        points < 300 -> "達人"
-        points < 400 -> "仙人"
+        points < 100 -> "凡人"
+        points < 400 -> "努力家"
+        points < 800 -> "達人"
+        points < 1000 -> "仙人"
         else -> "神"
     }
 

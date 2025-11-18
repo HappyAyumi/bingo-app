@@ -15,5 +15,14 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|center_horizontal"
         android:layout_marginBottom="20dp"/>
+
+    <Button
+        android:id="@+id/btnSwitchCamera"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="切り替え"
+        android:layout_alignParentEnd="true"
+        android:layout_margin="16dp"/>
+
 </FrameLayout>
 

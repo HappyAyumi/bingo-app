@@ -85,46 +85,39 @@
             android:layout_marginEnd="16dp"/>
 
         <Button
-            android:id="@+id/startButton"
+            android:id="@+id/levelResetButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="ビンゴ開始" />
-
+            android:text="レベルリセット"/>
     </LinearLayout>
+
     <!-- レベル＆称号表示 -->
     <LinearLayout
-        android:id="@+id/levelContainer"
+        android:id="@+id/levelLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="8dp"
-        android:background="#EEEEEE"
-        android:layout_marginBottom="8dp">
-
-        <TextView
-            android:id="@+id/levelTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="あなたの称号"
-            android:textSize="16sp"
-            android:textStyle="bold" />
+        android:padding="16dp"
+        android:layout_gravity="bottom"
+        android:gravity="center_horizontal">
 
         <TextView
             android:id="@+id/levelText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="凡人 (Lv.1)"
-            android:textSize="18sp"
+            android:textSize="20sp"
             android:textStyle="bold"
-            android:paddingBottom="4dp" />
+            android:paddingBottom="8dp"/>
 
         <ProgressBar
             android:id="@+id/levelProgress"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
-            android:layout_height="12dp"
+            style="@android:style/Widget.ProgressBar.Horizontal"
+            android:layout_width="250dp"
+            android:layout_height="wrap_content"
             android:max="100"
-            android:progress="0"
-            android:progressDrawable="@android:drawable/progress_horizontal" />
+            android:progress="0" />
+
     </LinearLayout>
+
 </LinearLayout>
