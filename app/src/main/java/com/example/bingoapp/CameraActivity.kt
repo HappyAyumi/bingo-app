@@ -13,6 +13,8 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import java.io.File
 import java.io.FileOutputStream
+import android.content.ContentValues
+import android.provider.MediaStore
 
 class CameraActivity : AppCompatActivity() {
 
@@ -99,6 +101,9 @@ class CameraActivity : AppCompatActivity() {
                         fixMirror(photoFile)
                     }
 
+                    // ★ ギャラリーにも保存する
+                    saveToGallery(photoFile)
+
                     val resultIntent = Intent()
                     resultIntent.putExtra("cellIndex", cellIndex)
                     setResult(RESULT_OK, resultIntent)
@@ -161,4 +166,22 @@ class CameraActivity : AppCompatActivity() {
         matrix.postRotate(degree)
         return android.graphics.Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
     }
+    private fun saveToGallery(photoFile: File) {
+        val values = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, photoFile.name)
+            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/BingoApp")
+        }
+
+        val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+
+        uri?.let {
+            contentResolver.openOutputStream(it).use { out ->
+                photoFile.inputStream().use { input ->
+                    input.copyTo(out!!)
+                }
+            }
+        }
+    }
+
 }

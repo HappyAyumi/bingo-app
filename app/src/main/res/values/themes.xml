@@ -1,4 +1,3 @@
 <resources>
-
     <style name="Theme.BingoApp" parent="Theme.AppCompat.DayNight.NoActionBar" />
 </resources>
