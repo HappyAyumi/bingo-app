@@ -12,6 +12,9 @@ import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
+    // どのラインが既にビンゴ済みかを記録するセット
+    private val bingoLines = mutableSetOf<String>()
+
     companion object {
         const val CAMERA_REQUEST_CODE = 100
     }
@@ -32,6 +35,9 @@ class MainActivity : AppCompatActivity() {
     private val PREFS_NAME = "UserProgress"
     private val KEY_POINTS = "points"
     private val bingoSize = 4
+
+    // セルの選択状態を保持する配列（bingoSize が確定しているのでここで初期化可能）
+    private val cellSelected = MutableList(bingoSize * bingoSize) { false }
 
     private val topicsByTheme = mapOf(
         "趣味" to listOf("流行りの漫画を読む", "新作映画鑑賞", "アクセサリーを手作りする", "自然の写真を撮る", "好きなアーティストのライブ映像を見る",
@@ -72,6 +78,7 @@ class MainActivity : AppCompatActivity() {
             override fun onItemSelected(parent: AdapterView<*>, view: android.view.View?, position: Int, id: Long) {
                 val selectedTheme = themes[position]
                 displayBingoSheet(selectedTheme)
+                // シート生成後に保存状態を反映（ファイル画像の読み込み等を優先）
                 restoreSavedSelection()
             }
             override fun onNothingSelected(parent: AdapterView<*>) {}
@@ -114,21 +121,51 @@ class MainActivity : AppCompatActivity() {
     private fun getPoints(): Int = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getInt(KEY_POINTS, 0)
 
     private fun getLevelName(points: Int): String = when {
-        points < 100 -> "凡人"
-        points < 400 -> "努力家"
-        points < 800 -> "達人"
-        points < 1000 -> "仙人"
-        else -> "神"
+        points < 100 -> "赤子"
+        points < 200 -> "オヤジ"
+        points < 300 -> "兵士"
+        points < 400 -> "勇者"
+        points < 500 -> "金太郎"
+        points < 600 -> "桃太郎"
+        points < 700 -> "孫悟空"
+        points < 800 -> "サムライ"
+        points < 900 -> "忍者"
+        points < 1000 -> "新選組"
+        points < 1100 -> "社長"
+        points < 1200 -> "ビリケン"
+        else -> "鬼"
     }
 
     private fun updateLevelUI() {
         val points = getPoints()
         val levelName = getLevelName(points)
         val levelProgressValue = points % 100
-        levelProgress.progress = levelProgressValue
         val levelNumber = points / 100 + 1
+
+        levelProgress.progress = levelProgressValue
         levelText.text = "$levelName (Lv.$levelNumber)"
+
+        // キャラクター画像を変更（リソース名はプロジェクトに合わせてください）
+        val characterImage = findViewById<ImageView>(R.id.characterImage)
+        val drawableRes = when {
+            points < 100 -> R.drawable.angel
+            points < 200 -> R.drawable.sakenomi_oyaji
+            points < 300 -> R.drawable.military
+            points < 400 -> R.drawable.yusya
+            points < 500 -> R.drawable.kintaro
+            points < 600 -> R.drawable.momotaro
+            points < 700 -> R.drawable.son_gokuh
+            points < 800 -> R.drawable.ronin_samurai
+            points < 900 -> R.drawable.ninja
+            points < 1000 -> R.drawable.shinsengumi_taishi
+            points < 1100 -> R.drawable.shacyoh
+            points < 1200 -> R.drawable.biriken
+            else -> R.drawable.oni
+        }
+        // ImageView が存在する前提
+        characterImage.setImageResource(drawableRes)
     }
+
 
     private fun animatePointGain(points: Int) {
         if (points <= 0) return
@@ -149,11 +186,22 @@ class MainActivity : AppCompatActivity() {
             .start()
     }
 
-    private fun onCellCompleted() = addPoints(10)
-    private fun onBingoAchieved() {
-        addPoints(50)
-        Toast.makeText(this, "ビンゴ！+50pt✨", Toast.LENGTH_SHORT).show()
+    // セルを選択（フラグと背景色を同期）
+    private fun toggleSelection(view: TextView, index: Int) {
+        cellSelected[index] = !cellSelected[index]
+
+        view.setBackgroundColor(
+            if (cellSelected[index]) ContextCompat.getColor(this, android.R.color.holo_blue_light)
+            else ContextCompat.getColor(this, android.R.color.transparent)
+        )
     }
+
+    private fun onCellCompleted() = addPoints(10)
+    private fun onBingoAchieved(count: Int) {
+        addPoints(50 * count)
+        Toast.makeText(this, "ビンゴ！${count}ライン達成！ +${50 * count}pt✨", Toast.LENGTH_SHORT).show()
+    }
+
 
     // --------------------
     // ビンゴ盤生成
@@ -165,6 +213,9 @@ class MainActivity : AppCompatActivity() {
         val topics = generateBingoTopics(theme, bingoSize * bingoSize)
 
         for (topic in topics) {
+            // 現在の子数をインデックスとして利用（これが新しいセルの index になる）
+            val cellIndex = bingoGrid.childCount
+
             val frame = FrameLayout(this)
             val textView = TextView(this).apply {
                 text = topic
@@ -172,12 +223,16 @@ class MainActivity : AppCompatActivity() {
                 gravity = android.view.Gravity.CENTER
                 setPadding(8)
                 background = ContextCompat.getDrawable(context, android.R.drawable.btn_default)
+
+                // クリック時は index を渡す
                 setOnClickListener {
-                    toggleSelection(this)
-                    onCellCompleted()
-                    if (checkBingo()) onBingoAchieved()
+                    toggleSelection(this, cellIndex)
+                    // 選択になった場合のみ得点を追加
+                    if (cellSelected[cellIndex]) onCellCompleted()
+                    val newlyBingo = checkBingo()
+                    if (newlyBingo > 0) onBingoAchieved(newlyBingo)
                     saveCurrentState()
-                    launchCameraForCell(bingoGrid.indexOfChild(frame))
+                    launchCameraForCell(cellIndex)
                 }
             }
 
@@ -195,39 +250,78 @@ class MainActivity : AppCompatActivity() {
 
             bingoGrid.addView(frame, params)
 
-            val file = File(filesDir, "cell_${bingoGrid.indexOfChild(frame)}.jpg")
+            // 画像ファイルがあれば読み込む
+            val file = File(filesDir, "cell_$cellIndex.jpg")
             if (file.exists()) {
                 val bitmap = BitmapFactory.decodeFile(file.absolutePath)
                 imageView.setImageBitmap(bitmap)
             }
+
+            // セルの背景は cellSelected の状態に合わせて初期化
+            textView.setBackgroundColor(
+                if (cellSelected[cellIndex]) ContextCompat.getColor(this, android.R.color.holo_blue_light)
+                else ContextCompat.getColor(this, android.R.color.transparent)
+            )
         }
     }
 
-    private fun toggleSelection(view: TextView) {
-        val selectedColor = ContextCompat.getColor(this, android.R.color.holo_blue_light)
-        val defaultColor = ContextCompat.getColor(this, android.R.color.transparent)
-        val bg = view.background
-        val currentColor = if (bg is android.graphics.drawable.ColorDrawable) bg.color else defaultColor
-        view.setBackgroundColor(if (currentColor == selectedColor) defaultColor else selectedColor)
-    }
+    // --------------------
+    // ビンゴ判定（新しく達成したライン数を返す）
+    // --------------------
+    private fun checkBingo(): Int {
+        var newBingoCount = 0
 
-    private fun checkBingo(): Boolean {
-        for (i in 0 until bingoSize) {
-            if ((0 until bingoSize).all { col -> isCellSelected(i * bingoSize + col) }) return true
-            if ((0 until bingoSize).all { row -> isCellSelected(row * bingoSize + i) }) return true
+        // 横
+        for (row in 0 until bingoSize) {
+            val key = "row$row"
+            val isBingo = (0 until bingoSize).all { col ->
+                isCellSelected(row * bingoSize + col)
+            }
+            if (isBingo && !bingoLines.contains(key)) {
+                bingoLines.add(key)
+                newBingoCount++
+            }
         }
-        if ((0 until bingoSize).all { i -> isCellSelected(i * bingoSize + i) }) return true
-        if ((0 until bingoSize).all { i -> isCellSelected(i * bingoSize + (bingoSize - 1 - i)) }) return true
-        return false
+
+        // 縦
+        for (col in 0 until bingoSize) {
+            val key = "col$col"
+            val isBingo = (0 until bingoSize).all { row ->
+                isCellSelected(row * bingoSize + col)
+            }
+            if (isBingo && !bingoLines.contains(key)) {
+                bingoLines.add(key)
+                newBingoCount++
+            }
+        }
+
+        // 左上→右下
+        val diag1Key = "diag1"
+        val diag1 = (0 until bingoSize).all { i ->
+            isCellSelected(i * bingoSize + i)
+        }
+        if (diag1 && !bingoLines.contains(diag1Key)) {
+            bingoLines.add(diag1Key)
+            newBingoCount++
+        }
+
+        // 右上→左下
+        val diag2Key = "diag2"
+        val diag2 = (0 until bingoSize).all { i ->
+            isCellSelected(i * bingoSize + (bingoSize - 1 - i))
+        }
+        if (diag2 && !bingoLines.contains(diag2Key)) {
+            bingoLines.add(diag2Key)
+            newBingoCount++
+        }
+
+        return newBingoCount
     }
 
     private fun isCellSelected(index: Int): Boolean {
-        val frame = bingoGrid.getChildAt(index) as? FrameLayout ?: return false
-        val textView = frame.getChildAt(0) as? TextView ?: return false
-        val selectedColor = ContextCompat.getColor(this, android.R.color.holo_blue_light)
-        val bg = textView.background
-        val currentColor = if (bg is android.graphics.drawable.ColorDrawable) bg.color else 0
-        return currentColor == selectedColor
+        // bounds チェックで安全に
+        if (index < 0 || index >= cellSelected.size) return false
+        return cellSelected[index]
     }
 
     // --------------------
@@ -236,7 +330,7 @@ class MainActivity : AppCompatActivity() {
     private fun saveCurrentState() {
         val prefs = getSharedPreferences("bingoPrefs", MODE_PRIVATE)
         val editor = prefs.edit()
-        for (i in 0 until bingoSize * bingoSize) editor.putBoolean("cell_$i", isCellSelected(i))
+        for (i in 0 until bingoSize * bingoSize) editor.putBoolean("cell_$i", cellSelected[i])
         editor.putString("currentTheme", themeSpinner.selectedItem.toString())
         editor.apply()
     }
@@ -253,8 +347,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun restoreSavedSelection() {
         val prefs = getSharedPreferences("bingoPrefs", MODE_PRIVATE)
+        // 保存されたフラグを読み出して内部配列にセット、UIを更新
         for (i in 0 until bingoSize * bingoSize) {
             val selected = prefs.getBoolean("cell_$i", false)
+            cellSelected[i] = selected
+
             val frame = bingoGrid.getChildAt(i) as? FrameLayout ?: continue
             val textView = frame.getChildAt(0) as? TextView ?: continue
             textView.setBackgroundColor(
@@ -273,9 +370,11 @@ class MainActivity : AppCompatActivity() {
             imageView.setImageBitmap(null)
             val file = File(filesDir, "cell_$i.jpg")
             if (file.exists()) file.delete()
+            cellSelected[i] = false
         }
         saveCurrentState()
         Toast.makeText(this, "ビンゴシートをリセットしました", Toast.LENGTH_SHORT).show()
+        bingoLines.clear()
     }
 
     // --------------------
