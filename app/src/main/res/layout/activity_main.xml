@@ -34,7 +34,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="12dp" />
 
-    <!-- 集中モード部分 -->
+    <!-- 集中モード -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -54,9 +54,10 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:textSize="16sp"
-            android:text=""/>
+            android:text="" />
 
     </LinearLayout>
+
     <!-- ビンゴボード -->
     <GridLayout
         android:id="@+id/bingoGrid"
@@ -82,41 +83,57 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="リセット"
-            android:layout_marginEnd="16dp"/>
+            android:layout_marginEnd="16dp" />
 
         <Button
             android:id="@+id/levelResetButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="レベルリセット"/>
+            android:text="レベルリセット" />
     </LinearLayout>
 
-    <!-- レベル＆称号表示 -->
+    <!-- レベル＆キャラ表示 -->
     <LinearLayout
         android:id="@+id/levelLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
+        android:orientation="horizontal"
         android:padding="16dp"
-        android:layout_gravity="bottom"
-        android:gravity="center_horizontal">
+        android:gravity="center_vertical">
 
-        <TextView
-            android:id="@+id/levelText"
-            android:layout_width="wrap_content"
+        <!-- レベル表示 -->
+        <LinearLayout
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="凡人 (Lv.1)"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:paddingBottom="8dp"/>
+            android:layout_weight="1"
+            android:orientation="vertical">
 
-        <ProgressBar
-            android:id="@+id/levelProgress"
-            style="@android:style/Widget.ProgressBar.Horizontal"
-            android:layout_width="250dp"
-            android:layout_height="wrap_content"
-            android:max="100"
-            android:progress="0" />
+            <TextView
+                android:id="@+id/levelText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="凡人 (Lv.1)"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:paddingBottom="8dp" />
+
+            <ProgressBar
+                android:id="@+id/levelProgress"
+                style="@android:style/Widget.ProgressBar.Horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="100"
+                android:progress="0" />
+        </LinearLayout>
+
+        <!-- キャラクター画像 -->
+        <ImageView
+            android:id="@+id/characterImage"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:src="@drawable/angel"
+            android:contentDescription="キャラクター"
+            android:layout_marginStart="16dp" />
 
     </LinearLayout>
 
