@@ -5,7 +5,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- 空リスト表示用 -->
     <TextView
         android:id="@+id/emptyTextView"
         android:layout_width="match_parent"
@@ -16,18 +15,15 @@
         android:textSize="18sp"
         android:visibility="gone" />
 
-    <!-- 個別承認リスト -->
-    <RecyclerView
-        android:id="@+id/pendingRecyclerView"
+    <ListView
+        android:id="@+id/pendingListView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"/>
+        android:layout_weight="1" />
 
-    <!-- すべて承認ボタン -->
     <Button
-        android:id="@+id/approveAllButton"
+        android:id="@+id/approveButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="すべて承認する" />
-
 </LinearLayout>
