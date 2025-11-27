@@ -1,67 +1,66 @@
 package com.example.bingoapp
 
 import android.content.Context
+import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
 
 object PendingItemRepository {
 
-    private const val PREF_NAME = "PendingApproval"
+    private const val PREF_NAME = "pending_items_pref"
     private const val KEY_PENDING = "pending_items"
 
-    /** 承認待ちに追加 */
-    fun addPending(context: Context, reason: String, points: Int, imageUri: String) {
-        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-        val listStr = prefs.getString(KEY_PENDING, "[]") ?: "[]"
+    fun addPending(context: Context, reason: String, points: Int) {
+        try {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            val jsonStr = prefs.getString(KEY_PENDING, "[]")
 
-        val array = JSONArray(listStr)
+            val jsonArray = JSONArray(jsonStr)
 
-        val obj = JSONObject().apply {
-            put("reason", reason)
-            put("points", points)
-            put("imageUri", imageUri)
+            val newItem = JSONObject().apply {
+                put("reason", reason)
+                put("points", points)
+                put("timestamp", System.currentTimeMillis())
+            }
+
+            jsonArray.put(newItem)
+
+            prefs.edit().putString(KEY_PENDING, jsonArray.toString()).apply()
+
+            Log.d("PendingRepo", "保存成功: $newItem")
+
+        } catch (e: Exception) {
+            Log.e("PendingRepo", "保存失敗: ${e.message}")
         }
-
-        array.put(obj)
-        prefs.edit().putString(KEY_PENDING, array.toString()).apply()
     }
 
-    /** PendingItem のリストを返す（Adapter 用） */
-    fun getPendingItems(context: Context): List<PendingItem> {
-        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-        val listStr = prefs.getString(KEY_PENDING, "[]") ?: "[]"
+    fun getPendingList(context: Context): List<PendingItem> {
+        return try {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            val jsonStr = prefs.getString(KEY_PENDING, "[]") ?: "[]"
 
-        val array = JSONArray(listStr)
-        val result = mutableListOf<PendingItem>()
+            val jsonArray = JSONArray(jsonStr)
+            val list = mutableListOf<PendingItem>()
 
-        for (i in 0 until array.length()) {
-            val obj = array.getJSONObject(i)
-            result.add(
-                PendingItem(
-                    reason = obj.getString("reason"),
-                    points = obj.getInt("points"),
-                    imageUri = obj.optString("imageUri", "")
+            for (i in 0 until jsonArray.length()) {
+                val obj = jsonArray.getJSONObject(i)
+                list.add(
+                    PendingItem(
+                        reason = obj.getString("reason"),
+                        points = obj.getInt("points"),
+                        timestamp = obj.getLong("timestamp")
+                    )
                 )
-            )
+            }
+            list
+        } catch (e: Exception) {
+            Log.e("PendingRepo", "読み込み失敗: ${e.message}")
+            emptyList()
         }
-
-        return result
     }
 
-    /** 全承認（合計ポイント返す） */
-    fun approveAll(context: Context): Int {
+    fun clear(context: Context) {
         val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-        val listStr = prefs.getString(KEY_PENDING, "[]") ?: "[]"
-
-        val array = JSONArray(listStr)
-        var total = 0
-
-        for (i in 0 until array.length()) {
-            val obj = array.getJSONObject(i)
-            total += obj.getInt("points")
-        }
-
         prefs.edit().putString(KEY_PENDING, "[]").apply()
-        return total
     }
 }

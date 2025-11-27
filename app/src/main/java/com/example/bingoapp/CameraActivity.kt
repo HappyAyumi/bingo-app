@@ -7,6 +7,7 @@ import android.media.ExifInterface
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -20,8 +21,6 @@ class CameraActivity : AppCompatActivity() {
 
     private var imageCapture: ImageCapture? = null
     private var cellIndex: Int = -1
-
-    // カメラ切替用
     private var lensFacing = CameraSelector.LENS_FACING_BACK
     private var cameraProvider: ProcessCameraProvider? = null
 
@@ -41,13 +40,11 @@ class CameraActivity : AppCompatActivity() {
             takePhoto()
         }
 
-        // カメラ切替ボタン
         findViewById<Button>(R.id.btnSwitchCamera)?.setOnClickListener {
             lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK)
                 CameraSelector.LENS_FACING_FRONT
             else
                 CameraSelector.LENS_FACING_BACK
-
             startCamera()
         }
     }
@@ -69,19 +66,10 @@ class CameraActivity : AppCompatActivity() {
             .requireLensFacing(lensFacing)
             .build()
 
-        // ★ 内カメラのときはプレビューを左右反転（ミラー解除）
-        if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
-            previewView.scaleX = -1f
-        } else {
-            previewView.scaleX = 1f
-        }
+        previewView.scaleX = if (lensFacing == CameraSelector.LENS_FACING_FRONT) -1f else 1f
 
-        try {
-            provider.unbindAll()
-            provider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
-        } catch (e: Exception) {
-            Log.e("CameraActivity", "Camera binding failed", e)
-        }
+        provider.unbindAll()
+        provider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
     }
 
     private fun takePhoto() {
@@ -89,20 +77,27 @@ class CameraActivity : AppCompatActivity() {
         val photoFile = File(filesDir, "cell_${cellIndex}.jpg")
 
         val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
+
         imageCapture.takePicture(outputOptions, ContextCompat.getMainExecutor(this),
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
 
-                    // 回転補正
                     fixImageRotation(photoFile)
 
-                    // ★ 内カメラ使用時は左右反転も補正
                     if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
                         fixMirror(photoFile)
                     }
 
-                    // ★ ギャラリーにも保存する
                     saveToGallery(photoFile)
+
+                    // ★ 承認待ちに追加
+                    PendingItemRepository.addPending(
+                        context = this@CameraActivity,
+                        reason = "セル${cellIndex + 1} の写真撮影",
+                        points = 10
+                    )
+
+                    Toast.makeText(this@CameraActivity, "承認待ちに追加しました", Toast.LENGTH_SHORT).show()
 
                     val resultIntent = Intent()
                     resultIntent.putExtra("cellIndex", cellIndex)
@@ -119,30 +114,23 @@ class CameraActivity : AppCompatActivity() {
     private fun fixMirror(photoFile: File) {
         try {
             val bitmap = BitmapFactory.decodeFile(photoFile.absolutePath)
-            val mirrored = mirrorBitmap(bitmap)
-
+            val matrix = Matrix()
+            matrix.preScale(-1f, 1f)
+            val mirrored = BitmapFactory.decodeFile(photoFile.absolutePath)?.let {
+                BitmapFactory.decodeFile(photoFile.absolutePath)
+            }
             FileOutputStream(photoFile).use { out ->
-                mirrored.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, out)
+                mirrored?.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, out)
             }
         } catch (e: Exception) {
             Log.e("CameraActivity", "Mirror fix failed: ${e.message}", e)
         }
     }
 
-    // ★ 左右反転（ミラー補正）用
-    private fun mirrorBitmap(bitmap: android.graphics.Bitmap): android.graphics.Bitmap {
-        val matrix = Matrix()
-        matrix.preScale(-1f, 1f) // 左右反転
-        return android.graphics.Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
-    }
-
     private fun fixImageRotation(photoFile: File) {
         try {
             val exif = ExifInterface(photoFile.absolutePath)
-            val orientation = exif.getAttributeInt(
-                ExifInterface.TAG_ORIENTATION,
-                ExifInterface.ORIENTATION_UNDEFINED
-            )
+            val orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED)
 
             val bitmap = BitmapFactory.decodeFile(photoFile.absolutePath)
             val rotatedBitmap = when (orientation) {
@@ -166,6 +154,7 @@ class CameraActivity : AppCompatActivity() {
         matrix.postRotate(degree)
         return android.graphics.Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
     }
+
     private fun saveToGallery(photoFile: File) {
         val values = ContentValues().apply {
             put(MediaStore.Images.Media.DISPLAY_NAME, photoFile.name)
@@ -177,11 +166,8 @@ class CameraActivity : AppCompatActivity() {
 
         uri?.let {
             contentResolver.openOutputStream(it).use { out ->
-                photoFile.inputStream().use { input ->
-                    input.copyTo(out!!)
-                }
+                photoFile.inputStream().copyTo(out!!)
             }
         }
     }
-
 }

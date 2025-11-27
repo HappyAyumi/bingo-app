@@ -1,40 +1,53 @@
 package com.example.bingoapp
 
-import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
-import android.widget.ImageView
+import android.widget.Button
 import android.widget.TextView
-import coil.load
+import androidx.recyclerview.widget.RecyclerView
 
-data class PendingItem(
-    val reason: String,
-    val points: Int,
-    val imageUri: String
-)
+class PendingAdapter(
+    private val items: MutableList<PendingItem>,
+    private val onApprove: (PendingItem) -> Unit,
+    private val onReject: (PendingItem) -> Unit
+) : RecyclerView.Adapter<PendingAdapter.ViewHolder>() {
 
-class PendingAdapter(context: Context, private val items: List<PendingItem>) :
-    ArrayAdapter<PendingItem>(context, 0, items) {
+    inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val reasonText: TextView = view.findViewById(R.id.reasonText)
+        val pointsText: TextView = view.findViewById(R.id.pointsText)
+        val approveBtn: Button = view.findViewById(R.id.approveButton)
+        val rejectBtn: Button = view.findViewById(R.id.rejectButton)
+    }
 
-    override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-        val item = items[position]
-        val view = convertView ?: LayoutInflater.from(context)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_pending, parent, false)
+        return ViewHolder(view)
+    }
 
-        val imageView = view.findViewById<ImageView>(R.id.imageView)
-        val reasonText = view.findViewById<TextView>(R.id.reasonText)
-        val pointsText = view.findViewById<TextView>(R.id.pointsText)
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val item = items[position]
 
-        // Coilで画像読み込み
-        imageView.load(item.imageUri) {
-            crossfade(true)
+        holder.reasonText.text = item.reason
+        holder.pointsText.text = "${item.points} pt"
+
+        holder.approveBtn.setOnClickListener {
+            onApprove(item)
         }
 
-        reasonText.text = item.reason
-        pointsText.text = "+${item.points} pt"
+        holder.rejectBtn.setOnClickListener {
+            onReject(item)
+        }
+    }
 
-        return view
+    override fun getItemCount(): Int = items.size
+
+    fun removeItem(item: PendingItem) {
+        val index = items.indexOf(item)
+        if (index != -1) {
+            items.removeAt(index)
+            notifyItemRemoved(index)
+        }
     }
 }
