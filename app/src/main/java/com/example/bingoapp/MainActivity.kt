@@ -9,6 +9,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.setPadding
 import java.io.File
+import org.json.JSONArray
+import org.json.JSONObject
 
 class MainActivity : AppCompatActivity() {
 
@@ -57,6 +59,12 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        val openPendingButton = findViewById<Button>(R.id.openPendingButton)
+        openPendingButton.setOnClickListener {
+            val intent = Intent(this, PendingApprovalActivity::class.java)
+            startActivity(intent)
+        }
 
         focusButton = findViewById(R.id.focusButton)
         resetButton = findViewById(R.id.resetButton)
@@ -109,6 +117,28 @@ class MainActivity : AppCompatActivity() {
 
         animatePointGain(points)
         updateLevelUI()
+    }
+
+    // --- 承認待ちポイント保存（堅牢化） ---
+    private fun addPendingPoints(reason: String, points: Int) {
+        val prefs = getSharedPreferences("approval", MODE_PRIVATE)
+        val listStr = prefs.getString("pendingList", "[]") ?: "[]"
+
+        val array = try {
+            JSONArray(listStr)
+        } catch (e: Exception) {
+            JSONArray()  // 破損時は強制リセット
+        }
+
+        val obj = JSONObject().apply {
+            put("reason", reason)
+            put("points", points)
+        }
+        array.put(obj)
+
+        prefs.edit().putString("pendingList", array.toString()).apply()
+
+        Toast.makeText(this, "承認待ちに追加しました（$points pt）", Toast.LENGTH_SHORT).show()
     }
 
     private fun resetLevel() {
@@ -196,12 +226,13 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun onCellCompleted() = addPoints(10)
+    private fun onCellCompleted() = addPendingPoints("セル達成", 10)
     private fun onBingoAchieved(count: Int) {
-        addPoints(50 * count)
-        Toast.makeText(this, "ビンゴ！${count}ライン達成！ +${50 * count}pt✨", Toast.LENGTH_SHORT).show()
-    }
+        val add = 50 * count
+        addPendingPoints("ビンゴ達成（${count}ライン）", add)
 
+        Toast.makeText(this, "承認待ち: ビンゴ！${count}ライン +${add}pt", Toast.LENGTH_SHORT).show()
+    }
 
     // --------------------
     // ビンゴ盤生成
@@ -418,7 +449,7 @@ class MainActivity : AppCompatActivity() {
                 isFocusMode = false
                 focusButton.text = "集中モード開始"
                 timerText.text = "集中モード終了！"
-                addPoints(20) // 集中モードボーナス
+                addPendingPoints("集中モード", 20)
                 Toast.makeText(applicationContext, "お疲れ様でした！", Toast.LENGTH_SHORT).show()
             }
         }.start()

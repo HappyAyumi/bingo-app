@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- 空リスト表示用 -->
+    <TextView
+        android:id="@+id/emptyTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="承認待ちはありません"
+        android:gravity="center"
+        android:padding="16dp"
+        android:textSize="18sp"
+        android:visibility="gone" />
+
+    <!-- 個別承認リスト -->
+    <RecyclerView
+        android:id="@+id/pendingRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+
+    <!-- すべて承認ボタン -->
+    <Button
+        android:id="@+id/approveAllButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="すべて承認する" />
+
+</LinearLayout>
