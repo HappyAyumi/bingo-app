@@ -1,66 +1,64 @@
 package com.example.bingoapp
 
 import android.content.Context
-import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
 
 object PendingItemRepository {
 
-    private const val PREF_NAME = "pending_items_pref"
+    private const val PREF_NAME = "PendingApproval"
     private const val KEY_PENDING = "pending_items"
 
+    /** 承認待ちに追加（他のActivityから呼び出して使う） */
     fun addPending(context: Context, reason: String, points: Int) {
-        try {
-            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-            val jsonStr = prefs.getString(KEY_PENDING, "[]")
-
-            val jsonArray = JSONArray(jsonStr)
-
-            val newItem = JSONObject().apply {
-                put("reason", reason)
-                put("points", points)
-                put("timestamp", System.currentTimeMillis())
-            }
-
-            jsonArray.put(newItem)
-
-            prefs.edit().putString(KEY_PENDING, jsonArray.toString()).apply()
-
-            Log.d("PendingRepo", "保存成功: $newItem")
-
-        } catch (e: Exception) {
-            Log.e("PendingRepo", "保存失敗: ${e.message}")
-        }
-    }
-
-    fun getPendingList(context: Context): List<PendingItem> {
-        return try {
-            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-            val jsonStr = prefs.getString(KEY_PENDING, "[]") ?: "[]"
-
-            val jsonArray = JSONArray(jsonStr)
-            val list = mutableListOf<PendingItem>()
-
-            for (i in 0 until jsonArray.length()) {
-                val obj = jsonArray.getJSONObject(i)
-                list.add(
-                    PendingItem(
-                        reason = obj.getString("reason"),
-                        points = obj.getInt("points"),
-                        timestamp = obj.getLong("timestamp")
-                    )
-                )
-            }
-            list
-        } catch (e: Exception) {
-            Log.e("PendingRepo", "読み込み失敗: ${e.message}")
-            emptyList()
-        }
-    }
-
-    fun clear(context: Context) {
         val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        val listStr = prefs.getString(KEY_PENDING, "[]") ?: "[]"
+
+        val array = JSONArray(listStr)
+
+        val obj = JSONObject().apply {
+            put("reason", reason)
+            put("points", points)
+        }
+
+        array.put(obj)
+
+        prefs.edit().putString(KEY_PENDING, array.toString()).apply()
+    }
+
+    /** 表示用に文字列リスト化 */
+    fun getPendingStrings(context: Context): List<String> {
+        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        val listStr = prefs.getString(KEY_PENDING, "[]") ?: "[]"
+
+        val array = JSONArray(listStr)
+        val result = mutableListOf<String>()
+
+        for (i in 0 until array.length()) {
+            val obj = array.getJSONObject(i)
+            val text = "【${obj.getString("reason")}】 +${obj.getInt("points")} pt"
+            result.add(text)
+        }
+
+        return result
+    }
+
+    /** 全承認 → 合計ポイントを返す */
+    fun approveAll(context: Context): Int {
+        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        val listStr = prefs.getString(KEY_PENDING, "[]") ?: "[]"
+
+        val array = JSONArray(listStr)
+        var total = 0
+
+        for (i in 0 until array.length()) {
+            val obj = array.getJSONObject(i)
+            total += obj.getInt("points")
+        }
+
+        // 承認後はクリア
         prefs.edit().putString(KEY_PENDING, "[]").apply()
+
+        return total
     }
 }
