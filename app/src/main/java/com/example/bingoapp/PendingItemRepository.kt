@@ -9,8 +9,8 @@ object PendingItemRepository {
     private const val PREF_NAME = "PendingApproval"
     private const val KEY_PENDING = "pending_items"
 
-    /** 承認待ちに追加（他のActivityから呼び出して使う） */
-    fun addPending(context: Context, reason: String, points: Int, imageUri: String?) {
+    /** 承認待ちに追加 */
+    fun addPending(context: Context, reason: String, points: Int, imageUri: String) {
         val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
         val listStr = prefs.getString(KEY_PENDING, "[]") ?: "[]"
 
@@ -19,13 +19,14 @@ object PendingItemRepository {
         val obj = JSONObject().apply {
             put("reason", reason)
             put("points", points)
-            put("imageUri", imageUri ?: "")
+            put("imageUri", imageUri)
         }
 
         array.put(obj)
         prefs.edit().putString(KEY_PENDING, array.toString()).apply()
     }
 
+    /** PendingItem のリストを返す（Adapter 用） */
     fun getPendingItems(context: Context): List<PendingItem> {
         val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
         val listStr = prefs.getString(KEY_PENDING, "[]") ?: "[]"
@@ -47,24 +48,7 @@ object PendingItemRepository {
         return result
     }
 
-    /** 表示用に文字列リスト化 */
-    fun getPendingStrings(context: Context): List<String> {
-        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-        val listStr = prefs.getString(KEY_PENDING, "[]") ?: "[]"
-
-        val array = JSONArray(listStr)
-        val result = mutableListOf<String>()
-
-        for (i in 0 until array.length()) {
-            val obj = array.getJSONObject(i)
-            val text = "【${obj.getString("reason")}】 +${obj.getInt("points")} pt"
-            result.add(text)
-        }
-
-        return result
-    }
-
-    /** 全承認 → 合計ポイントを返す */
+    /** 全承認（合計ポイント返す） */
     fun approveAll(context: Context): Int {
         val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
         val listStr = prefs.getString(KEY_PENDING, "[]") ?: "[]"
@@ -77,9 +61,7 @@ object PendingItemRepository {
             total += obj.getInt("points")
         }
 
-        // 承認後はクリア
         prefs.edit().putString(KEY_PENDING, "[]").apply()
-
         return total
     }
 }

@@ -27,7 +27,7 @@ class PendingAdapter(context: Context, private val items: List<PendingItem>) :
         val reasonText = view.findViewById<TextView>(R.id.reasonText)
         val pointsText = view.findViewById<TextView>(R.id.pointsText)
 
-        // Coilで安全に画像読み込み
+        // Coilで画像読み込み
         imageView.load(item.imageUri) {
             crossfade(true)
         }

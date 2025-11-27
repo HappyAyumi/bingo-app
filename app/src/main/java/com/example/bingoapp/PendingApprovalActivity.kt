@@ -2,7 +2,6 @@ package com.example.bingoapp
 
 import android.os.Bundle
 import android.view.View
-import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.bingoapp.databinding.ActivityPendingApprovalBinding
@@ -24,22 +23,21 @@ class PendingApprovalActivity : AppCompatActivity() {
     }
 
     private fun loadPendingItems() {
-        val list = PendingItemRepository.getPendingStrings(this)
+        val items = PendingItemRepository.getPendingItems(this)
 
-        if (list.isEmpty()) {
+        if (items.isEmpty()) {
             binding.emptyTextView.visibility = View.VISIBLE
         } else {
             binding.emptyTextView.visibility = View.GONE
         }
 
-        binding.pendingListView.adapter =
-            ArrayAdapter(this, android.R.layout.simple_list_item_1, list)
+        val adapter = PendingAdapter(this, items)
+        binding.pendingListView.adapter = adapter
     }
 
     private fun approveAll() {
         val total = PendingItemRepository.approveAll(this)
         Toast.makeText(this, "合計 $total pt を承認しました", Toast.LENGTH_SHORT).show()
-        loadPendingItems()
         finish()
     }
 }
