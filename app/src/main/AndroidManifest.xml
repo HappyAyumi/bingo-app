@@ -11,7 +11,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.BingoApp">
 
+        <activity android:name=".PendingApprovalActivity" android:exported="false" />
+
         <activity android:name=".CameraActivity" android:exported="false" />
+
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -19,7 +22,6 @@
             </intent-filter>
         </activity>
 
-        <!-- FileProvider設定 -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"
