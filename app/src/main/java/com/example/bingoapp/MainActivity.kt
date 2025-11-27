@@ -41,6 +41,9 @@ class MainActivity : AppCompatActivity() {
     // セルの選択状態を保持する配列（bingoSize が確定しているのでここで初期化可能）
     private val cellSelected = MutableList(bingoSize * bingoSize) { false }
 
+    // 現在シートに割り当てられているお題リスト（index がセル番号と対応）
+    private var currentTopics: List<String> = List(bingoSize * bingoSize) { "" }
+
     private val topicsByTheme = mapOf(
         "趣味" to listOf("流行りの漫画を読む", "新作映画鑑賞", "アクセサリーを手作りする", "自然の写真を撮る", "好きなアーティストのライブ映像を見る",
             "お菓子作りに挑戦する", "今日の日記を書く", "公園の遊具で遊ぶ", "スケッチブックに絵を描く", "花を育ててみる",
@@ -243,6 +246,9 @@ class MainActivity : AppCompatActivity() {
         bingoGrid.removeAllViews()
         val topics = generateBingoTopics(theme, bingoSize * bingoSize)
 
+        // ← ここで現在シートのトピックを保存
+        currentTopics = topics
+
         for (topic in topics) {
             // 現在の子数をインデックスとして利用（これが新しいセルの index になる）
             val cellIndex = bingoGrid.childCount
@@ -414,6 +420,11 @@ class MainActivity : AppCompatActivity() {
     private fun launchCameraForCell(cellIndex: Int) {
         val intent = Intent(this, CameraActivity::class.java)
         intent.putExtra("cellIndex", cellIndex)
+
+        // ★ ここで、そのセルに対応するお題名を追加で渡す
+        val taskName = if (cellIndex in currentTopics.indices) currentTopics[cellIndex] else "お題"
+        intent.putExtra("cellTask", taskName)
+
         startActivityForResult(intent, CAMERA_REQUEST_CODE)
     }
 
