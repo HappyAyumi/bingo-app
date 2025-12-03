@@ -49,7 +49,18 @@ class PendingApprovalActivity : AppCompatActivity() {
     private fun approveItem(item: PendingItem) {
         adapter.removeItem(item)
 
-        Toast.makeText(this, "承認しました", Toast.LENGTH_SHORT).show()
+        // ① UserProgress にポイントを加算
+        val prefs = getSharedPreferences("UserProgress", MODE_PRIVATE)
+        val currentPoints = prefs.getInt("points", 0)
+        val newPoints = currentPoints + item.points
+        prefs.edit().putInt("points", newPoints).apply()
+
+        // ② MainActivity に結果を返す（再描画指示）
+        val intent = intent
+        intent.putExtra("pointsChanged", true)
+        setResult(RESULT_OK, intent)
+
+        Toast.makeText(this, "${item.points}pt 承認しました", Toast.LENGTH_SHORT).show()
 
         removeFromRepository(item)
         checkEmptyState()

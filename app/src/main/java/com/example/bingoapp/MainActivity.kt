@@ -19,6 +19,7 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val CAMERA_REQUEST_CODE = 100
+        const val REQUEST_PENDING_APPROVAL = 200
     }
 
     private var isFocusMode = false
@@ -38,10 +39,7 @@ class MainActivity : AppCompatActivity() {
     private val KEY_POINTS = "points"
     private val bingoSize = 4
 
-    // セルの選択状態を保持する配列（bingoSize が確定しているのでここで初期化可能）
     private val cellSelected = MutableList(bingoSize * bingoSize) { false }
-
-    // 現在シートに割り当てられているお題リスト（index がセル番号と対応）
     private var currentTopics: List<String> = List(bingoSize * bingoSize) { "" }
 
     private val topicsByTheme = mapOf(
@@ -66,7 +64,7 @@ class MainActivity : AppCompatActivity() {
         val openPendingButton = findViewById<Button>(R.id.openPendingButton)
         openPendingButton.setOnClickListener {
             val intent = Intent(this, PendingApprovalActivity::class.java)
-            startActivity(intent)
+            startActivityForResult(intent, REQUEST_PENDING_APPROVAL)
         }
 
         focusButton = findViewById(R.id.focusButton)
@@ -78,7 +76,7 @@ class MainActivity : AppCompatActivity() {
         levelText = findViewById(R.id.levelText)
         levelProgress = findViewById(R.id.levelProgress)
 
-        updateLevelUI() // レベルUI更新
+        updateLevelUI()
 
         // Spinner 設定
         val themes = topicsByTheme.keys.toList()
@@ -89,7 +87,6 @@ class MainActivity : AppCompatActivity() {
             override fun onItemSelected(parent: AdapterView<*>, view: android.view.View?, position: Int, id: Long) {
                 val selectedTheme = themes[position]
                 displayBingoSheet(selectedTheme)
-                // シート生成後に保存状態を反映（ファイル画像の読み込み等を優先）
                 restoreSavedSelection()
             }
             override fun onNothingSelected(parent: AdapterView<*>) {}
@@ -102,27 +99,23 @@ class MainActivity : AppCompatActivity() {
 
         resetButton.setOnClickListener { resetBingoSheet() }
 
-        levelResetButton.setOnClickListener {
-            resetLevel()
-        }
+        levelResetButton.setOnClickListener { resetLevel() }
 
         restoreThemeAndSelection()
     }
 
     // --------------------
-    // ポイント＆レベル
+    // ポイント & レベル関連
     // --------------------
     private fun addPoints(points: Int) {
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         val current = prefs.getInt(KEY_POINTS, 0)
         val newTotal = (current + points).coerceAtLeast(0)
         prefs.edit().putInt(KEY_POINTS, newTotal).apply()
-
         animatePointGain(points)
         updateLevelUI()
     }
 
-    // --- 承認待ちポイント保存（堅牢化） ---
     private fun addPendingPoints(reason: String, points: Int) {
         val prefs = getSharedPreferences("approval", MODE_PRIVATE)
         val listStr = prefs.getString("pendingList", "[]") ?: "[]"
@@ -130,7 +123,7 @@ class MainActivity : AppCompatActivity() {
         val array = try {
             JSONArray(listStr)
         } catch (e: Exception) {
-            JSONArray()  // 破損時は強制リセット
+            JSONArray()
         }
 
         val obj = JSONObject().apply {
@@ -138,7 +131,6 @@ class MainActivity : AppCompatActivity() {
             put("points", points)
         }
         array.put(obj)
-
         prefs.edit().putString("pendingList", array.toString()).apply()
 
         Toast.makeText(this, "承認待ちに追加しました（$points pt）", Toast.LENGTH_SHORT).show()
@@ -178,7 +170,6 @@ class MainActivity : AppCompatActivity() {
         levelProgress.progress = levelProgressValue
         levelText.text = "$levelName (Lv.$levelNumber)"
 
-        // キャラクター画像を変更（リソース名はプロジェクトに合わせてください）
         val characterImage = findViewById<ImageView>(R.id.characterImage)
         val drawableRes = when {
             points < 100 -> R.drawable.angel
@@ -195,10 +186,8 @@ class MainActivity : AppCompatActivity() {
             points < 1200 -> R.drawable.biriken
             else -> R.drawable.oni
         }
-        // ImageView が存在する前提
         characterImage.setImageResource(drawableRes)
     }
-
 
     private fun animatePointGain(points: Int) {
         if (points <= 0) return
@@ -219,7 +208,11 @@ class MainActivity : AppCompatActivity() {
             .start()
     }
 
-    // セルを選択（フラグと背景色を同期）
+    // --------------------
+    // 残りの MainActivity のコードは以前のまま
+    // --------------------
+
+// セルを選択（フラグと背景色を同期）
     private fun toggleSelection(view: TextView, index: Int) {
         cellSelected[index] = !cellSelected[index]
 
@@ -228,11 +221,22 @@ class MainActivity : AppCompatActivity() {
             else ContextCompat.getColor(this, android.R.color.transparent)
         )
     }
+    // --------------------
+    // セル達成時
+    // --------------------
+    private fun onCellCompleted() {
+        val points = 10
+        addPendingPoints("セル達成", points)  // 承認待ちに保存
+        addPoints(points)                     // 即時レベル反映
+    }
 
-    private fun onCellCompleted() = addPendingPoints("セル達成", 10)
+    // --------------------
+    // ビンゴ達成時
+    // --------------------
     private fun onBingoAchieved(count: Int) {
-        val add = 50 * count
-        addPendingPoints("ビンゴ達成（${count}ライン）", add)
+        val add = 30 * count
+        addPendingPoints("ビンゴ達成（${count}ライン）", add)  // 承認待ちに保存
+        addPoints(add)                                         // 即時レベル反映
 
         Toast.makeText(this, "承認待ち: ビンゴ！${count}ライン +${add}pt", Toast.LENGTH_SHORT).show()
     }
