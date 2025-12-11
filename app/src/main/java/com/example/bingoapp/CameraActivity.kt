@@ -1,10 +1,13 @@
 package com.example.bingoapp
 
+import android.content.ContentValues
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.media.ExifInterface
 import android.os.Bundle
+import android.provider.MediaStore
 import android.util.Log
 import android.widget.Button
 import android.widget.Toast
@@ -14,8 +17,6 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import java.io.File
 import java.io.FileOutputStream
-import android.content.ContentValues
-import android.provider.MediaStore
 
 class CameraActivity : AppCompatActivity() {
 
@@ -24,11 +25,15 @@ class CameraActivity : AppCompatActivity() {
     private var lensFacing = CameraSelector.LENS_FACING_BACK
     private var cameraProvider: ProcessCameraProvider? = null
 
+    // intent で渡された「そのセルのお題名」を保持する
+    private var cellTaskFromIntent: String? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_camera)
 
         cellIndex = intent.getIntExtra("cellIndex", -1)
+        cellTaskFromIntent = intent.getStringExtra("cellTask")
 
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
         cameraProviderFuture.addListener({
@@ -82,18 +87,23 @@ class CameraActivity : AppCompatActivity() {
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
 
+                    // 回転補正
                     fixImageRotation(photoFile)
 
+                    // インカメラなら左右反転補正
                     if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
                         fixMirror(photoFile)
                     }
 
+                    // ギャラリーにも保存
                     saveToGallery(photoFile)
 
-                    // ★ 承認待ちに追加
+                    // ★ お題名を reason に使う（intent の cellTask を優先、無ければ MissionRepository から取得）
+                    val mission = cellTaskFromIntent ?: MissionRepository.getMission(cellIndex)
+
                     PendingItemRepository.addPending(
                         context = this@CameraActivity,
-                        reason = "セル${cellIndex + 1} の写真撮影",
+                        reason = mission,
                         points = 10
                     )
 
@@ -114,13 +124,11 @@ class CameraActivity : AppCompatActivity() {
     private fun fixMirror(photoFile: File) {
         try {
             val bitmap = BitmapFactory.decodeFile(photoFile.absolutePath)
-            val matrix = Matrix()
-            matrix.preScale(-1f, 1f)
-            val mirrored = BitmapFactory.decodeFile(photoFile.absolutePath)?.let {
-                BitmapFactory.decodeFile(photoFile.absolutePath)
-            }
+            val matrix = Matrix().apply { preScale(-1f, 1f) }
+            val mirrored = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+
             FileOutputStream(photoFile).use { out ->
-                mirrored?.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, out)
+                mirrored.compress(Bitmap.CompressFormat.JPEG, 100, out)
             }
         } catch (e: Exception) {
             Log.e("CameraActivity", "Mirror fix failed: ${e.message}", e)
@@ -141,7 +149,7 @@ class CameraActivity : AppCompatActivity() {
             }
 
             FileOutputStream(photoFile).use { out ->
-                rotatedBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, out)
+                rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
             }
 
         } catch (e: Exception) {
@@ -149,10 +157,10 @@ class CameraActivity : AppCompatActivity() {
         }
     }
 
-    private fun rotateBitmap(bitmap: android.graphics.Bitmap, degree: Float): android.graphics.Bitmap {
+    private fun rotateBitmap(bitmap: Bitmap, degree: Float): Bitmap {
         val matrix = Matrix()
         matrix.postRotate(degree)
-        return android.graphics.Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
     }
 
     private fun saveToGallery(photoFile: File) {
