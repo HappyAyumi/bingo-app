@@ -78,18 +78,25 @@
         android:gravity="center"
         android:layout_marginTop="8dp">
 
+        <TextView
+            android:id="@+id/resetCountText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ビンゴシート: 0枚目"
+            android:textSize="16sp"/>
+
         <Button
             android:id="@+id/resetButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="リセット"
+            android:text="次のカード"
             android:layout_marginEnd="16dp" />
 
         <Button
             android:id="@+id/levelResetButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="レベルリセット" />
+            android:text="リセット" />
     </LinearLayout>
 
     <!-- レベル＆キャラ表示 -->

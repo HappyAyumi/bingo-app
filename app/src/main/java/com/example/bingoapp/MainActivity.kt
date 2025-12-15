@@ -13,10 +13,8 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 class MainActivity : AppCompatActivity() {
-
     // どのラインが既にビンゴ済みかを記録するセット
     private val bingoLines = mutableSetOf<String>()
-
     companion object {
         const val CAMERA_REQUEST_CODE = 100
     }
@@ -30,7 +28,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var timerText: TextView
     private lateinit var bingoGrid: GridLayout
     private lateinit var themeSpinner: Spinner
-
     private lateinit var levelText: TextView
     private lateinit var levelProgress: ProgressBar
 
@@ -62,7 +59,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
         val openPendingButton = findViewById<Button>(R.id.openPendingButton)
         openPendingButton.setOnClickListener {
             val intent = Intent(this, PendingApprovalActivity::class.java)
@@ -77,7 +73,11 @@ class MainActivity : AppCompatActivity() {
         themeSpinner = findViewById(R.id.themeSpinner)
         levelText = findViewById(R.id.levelText)
         levelProgress = findViewById(R.id.levelProgress)
+        resetCountText = findViewById(R.id.resetCountText)
 
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        resetCount = prefs.getInt(KEY_RESET_COUNT, 0)
+        updateResetCountUI()
         updateLevelUI() // レベルUI更新
 
         // Spinner 設定
@@ -88,28 +88,22 @@ class MainActivity : AppCompatActivity() {
         themeSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: android.view.View?, position: Int, id: Long) {
                 val selectedTheme = themes[position]
-
                 // MissionRepository のテーマも更新（整合のため）
                 MissionRepository.currentTheme = selectedTheme
-
                 displayBingoSheet(selectedTheme)
                 // シート生成後に保存状態を反映（ファイル画像の読み込み等を優先）
                 restoreSavedSelection()
             }
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
-
         focusButton.setOnClickListener {
             if (!isFocusMode) startFocusMode(10 * 60 * 1000)
             else stopFocusMode()
         }
-
         resetButton.setOnClickListener { resetBingoSheet() }
-
         levelResetButton.setOnClickListener {
             resetLevel()
         }
-
         restoreThemeAndSelection()
     }
 
@@ -121,7 +115,6 @@ class MainActivity : AppCompatActivity() {
         val current = prefs.getInt(KEY_POINTS, 0)
         val newTotal = (current + points).coerceAtLeast(0)
         prefs.edit().putInt(KEY_POINTS, newTotal).apply()
-
         animatePointGain(points)
         updateLevelUI()
     }
@@ -130,29 +123,29 @@ class MainActivity : AppCompatActivity() {
     private fun addPendingPoints(reason: String, points: Int) {
         val prefs = getSharedPreferences("approval", MODE_PRIVATE)
         val listStr = prefs.getString("pendingList", "[]") ?: "[]"
-
         val array = try {
             JSONArray(listStr)
         } catch (e: Exception) {
             JSONArray()  // 破損時は強制リセット
         }
-
         val obj = JSONObject().apply {
             put("reason", reason)
             put("points", points)
         }
         array.put(obj)
-
         prefs.edit().putString("pendingList", array.toString()).apply()
-
         Toast.makeText(this, "承認待ちに追加しました（$points pt）", Toast.LENGTH_SHORT).show()
     }
 
+    //レベルもビンゴシートの枚数も同時リセット
     private fun resetLevel() {
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-        prefs.edit().putInt(KEY_POINTS, 0).apply()
-        updateLevelUI()
-        Toast.makeText(this, "レベルをリセットしました", Toast.LENGTH_SHORT).show()
+        prefs.edit().putInt(KEY_POINTS, 0).apply()   // ポイントをリセット
+        resetCount = 0                               // リセット回数を0に
+        saveResetCount()                             // SharedPreferences に保存
+        updateResetCountUI()                         // UI更新
+        updateLevelUI()                              // レベルUI更新
+        Toast.makeText(this, "レベルとリセット回数をリセットしました", Toast.LENGTH_SHORT).show()
     }
 
     private fun getPoints(): Int = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getInt(KEY_POINTS, 0)
@@ -203,7 +196,6 @@ class MainActivity : AppCompatActivity() {
         characterImage.setImageResource(drawableRes)
     }
 
-
     private fun animatePointGain(points: Int) {
         if (points <= 0) return
         val textView = TextView(this).apply {
@@ -226,7 +218,6 @@ class MainActivity : AppCompatActivity() {
     // セルを選択（フラグと背景色を同期）
     private fun toggleSelection(view: TextView, index: Int) {
         cellSelected[index] = !cellSelected[index]
-
         view.setBackgroundColor(
             if (cellSelected[index]) ContextCompat.getColor(this, android.R.color.holo_blue_light)
             else ContextCompat.getColor(this, android.R.color.transparent)
@@ -237,7 +228,6 @@ class MainActivity : AppCompatActivity() {
     private fun onBingoAchieved(count: Int) {
         val add = 50 * count
         addPendingPoints("ビンゴ達成（${count}ライン）", add)
-
         Toast.makeText(this, "承認待ち: ビンゴ！${count}ライン +${add}pt", Toast.LENGTH_SHORT).show()
     }
 
@@ -245,18 +235,14 @@ class MainActivity : AppCompatActivity() {
     // ビンゴ盤生成
     // --------------------
     private fun generateBingoTopics(theme: String, count: Int) = (topicsByTheme[theme] ?: listOf()).shuffled().take(count)
-
     private fun displayBingoSheet(theme: String) {
         bingoGrid.removeAllViews()
         val topics = generateBingoTopics(theme, bingoSize * bingoSize)
-
-        // ← ここで現在シートのトピックを保存
         currentTopics = topics
 
         for (topic in topics) {
             // 現在の子数をインデックスとして利用（これが新しいセルの index になる）
             val cellIndex = bingoGrid.childCount
-
             val frame = FrameLayout(this)
             val textView = TextView(this).apply {
                 text = topic
@@ -264,7 +250,6 @@ class MainActivity : AppCompatActivity() {
                 gravity = android.view.Gravity.CENTER
                 setPadding(8)
                 background = ContextCompat.getDrawable(context, android.R.drawable.btn_default)
-
                 // クリック時は index を渡す
                 setOnClickListener {
                     toggleSelection(this, cellIndex)
@@ -276,11 +261,9 @@ class MainActivity : AppCompatActivity() {
                     launchCameraForCell(cellIndex)
                 }
             }
-
             val imageView = ImageView(this).apply { scaleType = ImageView.ScaleType.CENTER_CROP }
             frame.addView(textView)
             frame.addView(imageView)
-
             val params = GridLayout.LayoutParams().apply {
                 width = 0
                 height = 0
@@ -288,7 +271,6 @@ class MainActivity : AppCompatActivity() {
                 rowSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
                 setMargins(6, 6, 6, 6)
             }
-
             bingoGrid.addView(frame, params)
 
             // 画像ファイルがあれば読み込む
@@ -311,7 +293,6 @@ class MainActivity : AppCompatActivity() {
     // --------------------
     private fun checkBingo(): Int {
         var newBingoCount = 0
-
         // 横
         for (row in 0 until bingoSize) {
             val key = "row$row"
@@ -323,7 +304,6 @@ class MainActivity : AppCompatActivity() {
                 newBingoCount++
             }
         }
-
         // 縦
         for (col in 0 until bingoSize) {
             val key = "col$col"
@@ -335,7 +315,6 @@ class MainActivity : AppCompatActivity() {
                 newBingoCount++
             }
         }
-
         // 左上→右下
         val diag1Key = "diag1"
         val diag1 = (0 until bingoSize).all { i ->
@@ -345,7 +324,6 @@ class MainActivity : AppCompatActivity() {
             bingoLines.add(diag1Key)
             newBingoCount++
         }
-
         // 右上→左下
         val diag2Key = "diag2"
         val diag2 = (0 until bingoSize).all { i ->
@@ -355,7 +333,6 @@ class MainActivity : AppCompatActivity() {
             bingoLines.add(diag2Key)
             newBingoCount++
         }
-
         return newBingoCount
     }
 
@@ -402,6 +379,19 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private var resetCount: Int = 0
+    private val KEY_RESET_COUNT = "resetCount"
+    private lateinit var resetCountText: TextView
+
+    private fun saveResetCount() {
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        prefs.edit().putInt(KEY_RESET_COUNT, resetCount).apply()
+    }
+
+    private fun updateResetCountUI() {
+        resetCountText.text = "ビンゴシート: $resetCount 枚目"
+    }
+
     private fun resetBingoSheet() {
         for (i in 0 until bingoSize * bingoSize) {
             val frame = bingoGrid.getChildAt(i) as? FrameLayout ?: continue
@@ -413,9 +403,14 @@ class MainActivity : AppCompatActivity() {
             if (file.exists()) file.delete()
             cellSelected[i] = false
         }
+        bingoLines.clear()
+
+        resetCount++
+        saveResetCount()
+        updateResetCountUI()
+
         saveCurrentState()
         Toast.makeText(this, "ビンゴシートをリセットしました", Toast.LENGTH_SHORT).show()
-        bingoLines.clear()
     }
 
     // --------------------
@@ -425,10 +420,9 @@ class MainActivity : AppCompatActivity() {
         val intent = Intent(this, CameraActivity::class.java)
         intent.putExtra("cellIndex", cellIndex)
 
-        // ★ ここで、そのセルに対応するお題名を追加で渡す
+        //セルに対応するお題名を追加で渡す
         val taskName = if (cellIndex in currentTopics.indices) currentTopics[cellIndex] else "お題"
         intent.putExtra("cellTask", taskName)
-
         startActivityForResult(intent, CAMERA_REQUEST_CODE)
     }
 
