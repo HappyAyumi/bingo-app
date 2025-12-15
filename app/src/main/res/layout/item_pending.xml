@@ -6,6 +6,17 @@
     android:padding="12dp"
     android:background="#FFFFFF">
 
+    <ImageView
+        android:id="@+id/taskImage"
+        android:layout_width="match_parent"
+        android:layout_height="180dp"
+        android:scaleType="centerCrop"/>
+
+    <TextView
+        android:id="@+id/taskText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
     <TextView
         android:id="@+id/reasonText"
         android:layout_width="match_parent"

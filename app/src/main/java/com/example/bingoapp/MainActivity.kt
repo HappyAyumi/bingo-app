@@ -120,21 +120,30 @@ class MainActivity : AppCompatActivity() {
     }
 
     // --- 承認待ちポイント保存（堅牢化） ---
-    private fun addPendingPoints(reason: String, points: Int) {
+    private fun addPendingPoints(
+        reason: String,
+        points: Int,
+        cellIndex: Int,
+        taskName: String
+    ) {
         val prefs = getSharedPreferences("approval", MODE_PRIVATE)
         val listStr = prefs.getString("pendingList", "[]") ?: "[]"
+
         val array = try {
             JSONArray(listStr)
         } catch (e: Exception) {
-            JSONArray()  // 破損時は強制リセット
+            JSONArray()
         }
+
         val obj = JSONObject().apply {
             put("reason", reason)
             put("points", points)
+            put("cellIndex", cellIndex)   // ★ 追加
+            put("taskName", taskName)     // ★ 追加（表示用）
         }
+
         array.put(obj)
         prefs.edit().putString("pendingList", array.toString()).apply()
-        Toast.makeText(this, "承認待ちに追加しました（$points pt）", Toast.LENGTH_SHORT).show()
     }
 
     //レベルもビンゴシートの枚数も同時リセット
@@ -224,11 +233,14 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun onCellCompleted() = addPendingPoints("セル達成", 10)
     private fun onBingoAchieved(count: Int) {
         val add = 50 * count
-        addPendingPoints("ビンゴ達成（${count}ライン）", add)
-        Toast.makeText(this, "承認待ち: ビンゴ！${count}ライン +${add}pt", Toast.LENGTH_SHORT).show()
+        addPendingPoints(
+            reason = "ビンゴ達成（${count}ライン）",
+            points = add,
+            cellIndex = -1,
+            taskName = "ビンゴ"
+        )
     }
 
     // --------------------
@@ -254,7 +266,6 @@ class MainActivity : AppCompatActivity() {
                 setOnClickListener {
                     toggleSelection(this, cellIndex)
                     // 選択になった場合のみ得点を追加
-                    if (cellSelected[cellIndex]) onCellCompleted()
                     val newlyBingo = checkBingo()
                     if (newlyBingo > 0) onBingoAchieved(newlyBingo)
                     saveCurrentState()
@@ -458,7 +469,12 @@ class MainActivity : AppCompatActivity() {
                 isFocusMode = false
                 focusButton.text = "集中モード開始"
                 timerText.text = "集中モード終了！"
-                addPendingPoints("集中モード", 20)
+                addPendingPoints(
+                    reason = "集中モード",
+                    points = 20,
+                    cellIndex = -1,
+                    taskName = "集中モード"
+                )
                 Toast.makeText(applicationContext, "お疲れ様でした！", Toast.LENGTH_SHORT).show()
             }
         }.start()

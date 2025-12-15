@@ -1,11 +1,14 @@
 package com.example.bingoapp
 
+import android.graphics.BitmapFactory
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import java.io.File
 
 class PendingAdapter(
     private val items: MutableList<PendingItem>,
@@ -14,6 +17,8 @@ class PendingAdapter(
 ) : RecyclerView.Adapter<PendingAdapter.ViewHolder>() {
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val taskImage: ImageView = view.findViewById(R.id.taskImage)
+        val taskText: TextView = view.findViewById(R.id.taskText)
         val reasonText: TextView = view.findViewById(R.id.reasonText)
         val pointsText: TextView = view.findViewById(R.id.pointsText)
         val approveBtn: Button = view.findViewById(R.id.approveButton)
@@ -29,8 +34,18 @@ class PendingAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
 
+        holder.taskText.text = item.taskName
         holder.reasonText.text = item.reason
-        holder.pointsText.text = "${item.points} pt"
+        holder.pointsText.text = "${item.points}pt"
+
+        val file = File(holder.itemView.context.filesDir, "cell_${item.cellIndex}.jpg")
+        if (file.exists()) {
+            val bitmap = BitmapFactory.decodeFile(file.absolutePath)
+            holder.taskImage.setImageBitmap(bitmap)
+            holder.taskImage.visibility = View.VISIBLE
+        } else {
+            holder.taskImage.visibility = View.GONE
+        }
 
         holder.approveBtn.setOnClickListener {
             onApprove(item)
