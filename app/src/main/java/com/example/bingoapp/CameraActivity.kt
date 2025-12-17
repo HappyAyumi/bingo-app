@@ -104,9 +104,7 @@ class CameraActivity : AppCompatActivity() {
                     PendingItemRepository.addPending(
                         context = this@CameraActivity,
                         reason = mission,
-                        points = 10,
-                        cellIndex = cellIndex,
-                        taskName = mission
+                        points = 10
                     )
 
                     Toast.makeText(this@CameraActivity, "承認待ちに追加しました", Toast.LENGTH_SHORT).show()
