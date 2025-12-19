@@ -502,4 +502,8 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         focusTimer?.cancel()
     }
+    override fun onResume() {
+        super.onResume()
+        updateLevelUI()
+    }
 }

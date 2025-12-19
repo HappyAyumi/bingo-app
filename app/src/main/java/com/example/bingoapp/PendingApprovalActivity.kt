@@ -49,16 +49,11 @@ class PendingApprovalActivity : AppCompatActivity() {
     private fun approveItem(item: PendingItem) {
         adapter.removeItem(item)
 
-        // ① UserProgress にポイントを加算
+        // ★ MainActivity と同じ考え方
         val prefs = getSharedPreferences("UserProgress", MODE_PRIVATE)
         val currentPoints = prefs.getInt("points", 0)
-        val newPoints = currentPoints + item.points
-        prefs.edit().putInt("points", newPoints).apply()
-
-        // ② MainActivity に結果を返す（再描画指示）
-        val intent = intent
-        intent.putExtra("pointsChanged", true)
-        setResult(RESULT_OK, intent)
+        val newTotal = (currentPoints + item.points).coerceAtLeast(0)
+        prefs.edit().putInt("points", newTotal).apply()
 
         Toast.makeText(this, "${item.points}pt 承認しました", Toast.LENGTH_SHORT).show()
 
