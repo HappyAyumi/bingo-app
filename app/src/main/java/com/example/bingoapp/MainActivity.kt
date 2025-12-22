@@ -119,33 +119,6 @@ class MainActivity : AppCompatActivity() {
         updateLevelUI()
     }
 
-    // --- 承認待ちポイント保存（堅牢化） ---
-    private fun addPendingPoints(
-        reason: String,
-        points: Int,
-        cellIndex: Int,
-        taskName: String
-    ) {
-        val prefs = getSharedPreferences("approval", MODE_PRIVATE)
-        val listStr = prefs.getString("pendingList", "[]") ?: "[]"
-
-        val array = try {
-            JSONArray(listStr)
-        } catch (e: Exception) {
-            JSONArray()
-        }
-
-        val obj = JSONObject().apply {
-            put("reason", reason)
-            put("points", points)
-            put("cellIndex", cellIndex)   // ★ 追加
-            put("taskName", taskName)     // ★ 追加（表示用）
-        }
-
-        array.put(obj)
-        prefs.edit().putString("pendingList", array.toString()).apply()
-    }
-
     //レベルもビンゴシートの枚数も同時リセット
     private fun resetLevel() {
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
@@ -235,7 +208,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun onBingoAchieved(count: Int) {
         val add = 50 * count
-        addPendingPoints(
+        PendingItemRepository.addPending(
+            context = this,
             reason = "ビンゴ達成（${count}ライン）",
             points = add,
             cellIndex = -1,
@@ -469,7 +443,8 @@ class MainActivity : AppCompatActivity() {
                 isFocusMode = false
                 focusButton.text = "集中モード開始"
                 timerText.text = "集中モード終了！"
-                addPendingPoints(
+                PendingItemRepository.addPending(
+                    context = this@MainActivity,
                     reason = "集中モード",
                     points = 20,
                     cellIndex = -1,
@@ -501,9 +476,5 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         focusTimer?.cancel()
-    }
-    override fun onResume() {
-        super.onResume()
-        updateLevelUI()
     }
 }

@@ -25,7 +25,9 @@ class PendingApprovalActivity : AppCompatActivity() {
     }
 
     private fun loadPendingList() {
-        val pendingList = PendingItemRepository.getPendingList(this).toMutableList()
+        val pendingList = PendingItemRepository
+            .getPendingList(this)
+            .toMutableList()
 
         if (pendingList.isEmpty()) {
             emptyTextView.visibility = View.VISIBLE
@@ -38,8 +40,8 @@ class PendingApprovalActivity : AppCompatActivity() {
 
         adapter = PendingAdapter(
             items = pendingList,
-            onApprove = { item -> approveItem(item) },
-            onReject = { item -> rejectItem(item) }
+            onApprove = { approveItem(it) },
+            onReject = { rejectItem(it) }
         )
 
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -49,11 +51,16 @@ class PendingApprovalActivity : AppCompatActivity() {
     private fun approveItem(item: PendingItem) {
         adapter.removeItem(item)
 
-        // ★ MainActivity と同じ考え方
+        // ① UserProgress にポイントを加算
         val prefs = getSharedPreferences("UserProgress", MODE_PRIVATE)
         val currentPoints = prefs.getInt("points", 0)
-        val newTotal = (currentPoints + item.points).coerceAtLeast(0)
-        prefs.edit().putInt("points", newTotal).apply()
+        val newPoints = currentPoints + item.points
+        prefs.edit().putInt("points", newPoints).apply()
+
+        // ② MainActivity に結果を返す（再描画指示）
+        val intent = intent
+        intent.putExtra("pointsChanged", true)
+        setResult(RESULT_OK, intent)
 
         Toast.makeText(this, "${item.points}pt 承認しました", Toast.LENGTH_SHORT).show()
 
